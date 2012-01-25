@@ -1,0 +1,771 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+#============================
+# Filename: makebeamerinfo
+# Author: Joel Berger
+# Author's Email: joel.a.berger <at> gmail <dot> com
+# Revision Date: Jan 25, 2012
+my $version_number = "2.0.0b2";
+#============================
+# Changelog information goes here:
+#
+# 2.0.0: A complete rewrite of the engine that parses the .nav file,
+#   additional presets, and functioning GUI and CLI modes.
+#
+#============================
+# License: GPLv3 or any later version. See http://www.gnu.org/licenses/ for more information.
+#
+#   Copyright (C) 2012 Joel Berger
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+#============================
+# Initialization
+#============================
+
+#============================
+# Load packages:
+
+# Load package to increase portability
+use Cwd 'abs_path';
+use File::Util;
+use File::Spec::Functions;
+
+# In order to combine CLI and GUI into one script and parse CLI options
+use Getopt::Long;
+use Pod::Usage;
+
+#============================
+# Parse in command line options and start program in GUI or CLI mode
+#
+# Because we want to conditionally start GUI mode by not specifying any options 
+# we must declare variables outside the BEGIN but specify initial values inside it.
+
+my $opt_nav; # command option for nav file
+my $opt_pdf; # command option for pdf file
+my $help; # command switch to display help
+my $if_gui; # boolean of operational mode, 1 = GUI, 0 = CLI
+
+BEGIN {
+  $help = 0;
+  $if_gui = 1; # If no options given assume GUI mode
+  $opt_nav = '';
+  $opt_pdf = '';
+  GetOptions(
+    'help|?' => \$help,
+    'nav:s' => \$opt_nav,
+    'pdf:s' => \$opt_pdf
+  );
+  # If file locations are specified on the command line or if information is requested run as command line
+  if (
+    $opt_nav ne ''
+    || $opt_pdf ne '' 
+    || $help == 1 
+  ) {
+    $if_gui = 0;
+  }
+}
+# If GUI is to be used load additional modules
+use if $if_gui, 'Tk';
+use if $if_gui, 'Tk::LabFrame';
+use if $if_gui, 'Tk::LabEntry';
+use if $if_gui, 'Tk::NoteBook';
+
+#===========================
+# Variable declarations
+
+my %files; #holder for file name etc.
+my %pages; #holder for page information from nav file
+my %sections; #holder for section information
+my @available_transitions = ( #list of the available transitions
+	"Crossfade",
+	"None",
+	"PagePeel",
+	"PageTurn",
+	"SlideDown",
+	"SlideLeft",
+	"SlideRight",
+	"SlideUp",
+	"SpinOutIn",
+	"SpiralOutIn",
+	"SqueezeDown",
+	"SqueezeLeft",
+	"SqueezeRight",
+	"SqueezeUp",
+	"WipeBlobs",
+	"WipeCenterIn",
+	"WipeCenterOut",
+	"WipeDown",
+	"WipeDownRight",
+	"WipeLeft",
+	"WipeRight",
+	"WipeUp",
+	"WipeUpLeft",
+	"ZoomOutIn"
+);
+# Initialize Hash of the custom transitions set from array of available transitions
+my %transitions;
+foreach my $trans (@available_transitions) {
+  $transitions{'increment'}{$trans} = 0;
+  $transitions{'frame'}{$trans} = 0;
+}
+# the "clean" transition set is a basic set useful in all circumstances
+my %clean = (
+  increment => ["WipeRight"],
+  frame => "PageTurn"
+);
+# the "preset" transition set sorts the available transitions into the two uses as appropriate for a beamer presentation
+my %preset = (
+  increment => [
+	"WipeCenterIn",
+	"WipeCenterOut",
+	"WipeDown",
+	"WipeDownRight",
+	"WipeLeft",
+	"WipeRight",
+	"WipeUp",
+	"WipeUpLeft"
+  ],
+  frame => [
+	"Crossfade",
+	"PagePeel",
+	"PageTurn",
+	"SlideDown",
+	"SlideLeft",
+	"SlideRight",
+	"SlideUp",
+	"SpinOutIn",
+	"SpiralOutIn",
+	"SqueezeDown",
+	"SqueezeLeft",
+	"SqueezeRight",
+	"SqueezeUp",
+	"WipeBlobs",
+	"ZoomOutIn"
+  ]
+);
+setInitialCustom(); # set default custom transitions to the "clean" set
+my %gui; # holder for GUI elements
+my %options; # holder for other options
+$options{'collapse'} = 1; # set option to collapse AtBeginSection and AtBeginSubsection elements
+$options{'transition_set'} = 'clean'; # set the initial transition set to "clean"
+
+my $last_transition; # holder for making sure that the next random transition is not the same as the last
+
+#============================
+# Start one interface or the other
+
+if ($if_gui) {
+  runGUI();
+} else {
+  runCLI();
+};
+
+#============================
+# CLI mode
+#============================
+
+sub runCLI {
+  if ($help) {
+    pod2usage(0);
+    exit;
+  }
+  if (defined $opt_pdf && $opt_pdf ne '') {
+    $files{'pdf'}{'full'} = abs_path($opt_pdf);
+    unless (defined $opt_nav && $opt_nav ne '') {
+      $files{'nav'}{'full'} = findFile(abs_path($opt_pdf));
+    }
+  }
+  if (defined $opt_nav && $opt_nav ne '') {
+    $files{'nav'}{'full'} = abs_path($opt_nav);
+    unless (defined $opt_pdf && $opt_pdf ne '') {
+      $files{'pdf'}{'full'} = findFile(abs_path($opt_nav));
+    }
+  }
+  createInfo();
+}
+
+#============================
+# GUI mode subs
+#============================
+
+sub runGUI {
+  createMainWindow();
+  MainLoop();
+}
+
+sub createMainWindow {# Sub to create GUI
+  $gui{'mw'} = new MainWindow;
+  $gui{'mw'} -> title( 'Makebeamerinfo' );
+
+  # Create Tabs
+  $gui{'nb'} = $gui{'mw'} -> NoteBook() -> pack;
+  $gui{'tabs'}{'setup'} = $gui{'nb'} -> add(
+    'setup',
+    -label => "Setup"
+  );
+  $gui{'tabs'}{'transitions'} = $gui{'nb'} -> add(
+    'transitions',
+    -label => "Transitions",
+    -state => "disabled" # start disabled if defaulting to use non-custom trans_set
+  );
+
+  # Create frame to hold action buttons
+  $gui{'frame'}{'actions'} = $gui{'mw'} -> Frame(
+    -relief => "raised",
+    -borderwidth => 2
+  ) -> pack(-fill => 'x');
+
+  # Create action buttons
+  $gui{'button'}{'create'} = $gui{'frame'}{'actions'} -> Button(
+    -text => "Create .info",
+    -command => \&createInfo
+  ) -> grid(-row => 1, -column => 1);
+  $gui{'button'}{'about'} = $gui{'frame'}{'actions'} -> Button(
+    -text => "About MBI",
+    -command => \&aboutMBI
+  ) -> grid(-row => 1, -column => 2);
+  $gui{'button'}{'quit'} = $gui{'frame'}{'actions'} -> Button(
+    -text => "Quit",
+    -command => \&exitProgramEarly
+  ) -> grid(-row => 1, -column => 3);
+
+  # Create Frames for "Setup" page
+  $gui{'frame'}{'locations'} = $gui{'tabs'}{'setup'} -> LabFrame(
+    -label => "File Locations",
+    -labelside => "acrosstop"
+  ) -> pack;
+  $gui{'frame'}{'transition_set'} = $gui{'tabs'}{'setup'} -> LabFrame(
+    -label => "Transition Set",
+    -labelside => "acrosstop"
+  ) -> pack(-fill => 'x');
+  $gui{'frame'}{'other_options'} = $gui{'tabs'}{'setup'} -> LabFrame(
+    -label => "Other Options",
+    -labelside => "acrosstop"
+  ) -> pack(-fill => 'x');
+
+  # Create Frame for "Transitions" page
+  $gui{'frame'}{'custom_transitions'} = $gui{'tabs'}{'transitions'} -> LabFrame(
+    -label => "Custom Transitions",
+    -labelside => "acrosstop"
+  ) -> pack(-fill => 'x');
+
+  # Inputs blocks for files
+  $gui{'entry'}{'pdf'} = $gui{'frame'}{'locations'} -> LabEntry(
+    -label => ".pdf file",
+    -labelPack => [-side => "left"],
+    -textvariable => \$files{'pdf'}{'full'}
+  ) -> grid(-row => 1, -column => 1);
+  $gui{'button'}{'pdf'}{'get'} = $gui{'frame'}{'locations'} -> Button(
+    -text => "Browse",
+    -command => sub { getFile('pdf'); }
+  ) -> grid(-row => 1, -column => 2);
+  $gui{'button'}{'pdf'}{'clear'} = $gui{'frame'}{'locations'} -> Button(
+    -text => "Clear",
+    -command => sub { clearFile('pdf'); }
+  ) -> grid(-row => 1, -column => 3);
+  $gui{'entry'}{'nav'} = $gui{'frame'}{'locations'} -> LabEntry(
+    -label => ".nav file",
+    -labelPack => [-side => "left"],
+    -textvariable => \$files{'nav'}{'full'}
+  ) -> grid(-row => 2, -column => 1);
+  $gui{'button'}{'nav'}{'get'} = $gui{'frame'}{'locations'} -> Button(
+    -text => "Browse",
+    -command => sub { getFile('nav'); }
+  ) -> grid(-row => 2, -column => 2);
+  $gui{'button'}{'nav'}{'clear'} = $gui{'frame'}{'locations'} -> Button(
+    -text => "Clear",
+    -command => sub { clearFile('nav'); }
+  ) -> grid(-row => 2, -column => 3);
+
+  # "Transition Set" items
+  $gui{'radio'}{'default'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
+    -variable => \$options{'transition_set'},
+    -value => 'default',
+    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
+  ) -> grid(-row => 1, -column => 1);
+  $gui{'label'}{'deault'} = $gui{'frame'}{'transition_set'} -> Label(
+    -text => 'Default'
+  ) -> grid(-row => 1, -column => 2);
+
+  $gui{'radio'}{'clean'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
+    -variable => \$options{'transition_set'},
+    -value => 'clean',
+    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
+  ) -> grid(-row => 2, -column => 1);
+  $gui{'label'}{'clean'} = $gui{'frame'}{'transition_set'} -> Label(
+    -text => 'Clean'
+  ) -> grid(-row => 2, -column => 2);
+
+  $gui{'radio'}{'preset'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
+    -variable => \$options{'transition_set'},
+    -value => 'preset',
+    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
+  ) -> grid(-row => 3, -column => 1);
+  $gui{'label'}{'preset'} = $gui{'frame'}{'transition_set'} -> Label(
+    -text => 'Beamer (sane)' # Formerly Preset
+  ) -> grid(-row => 3, -column => 2);
+
+  $gui{'radio'}{'custom'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
+    -variable => \$options{'transition_set'},
+    -value => 'custom',
+    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'normal'); }
+  ) -> grid(-row => 4, -column => 1);
+  $gui{'label'}{'custom'} = $gui{'frame'}{'transition_set'} -> Label(
+    -text => 'Custom'
+  ) -> grid(-row => 4, -column => 2);
+
+  # "Other options" items
+  $gui{'check'}{'collapse'} = $gui{'frame'}{'other_options'} -> Checkbutton(
+    -variable =>\$options{'collapse'},
+    -onvalue => 1,
+    -offvalue => 0
+  ) -> grid(-row => 1, -column=> 1);
+  $gui{'label'}{'collapse'} = $gui{'frame'}{'other_options'} -> Label(
+    -text => "Collapse automatically generated\noutline pages at the simultaneous\nstart of a section and a subsection"
+  ) -> grid(-row => 1, -column=> 2);
+
+  # Populate custom transition tab
+  my $num_transitions = keys %{ $transitions{'increment'} };
+  $gui{'label'}{'F1'} = $gui{'frame'}{'custom_transitions'} -> Label(
+    -text => 'F'
+  ) -> grid(-row => 0, -column => 1);
+  $gui{'label'}{'I1'} = $gui{'frame'}{'custom_transitions'} -> Label(
+    -text => 'I'
+  ) -> grid(-row => 0, -column => 2);
+  $gui{'label'}{'F2'} = $gui{'frame'}{'custom_transitions'} -> Label(
+    -text => 'F'
+  ) -> grid(-row => 0, -column => 4);
+  $gui{'label'}{'I2'} = $gui{'frame'}{'custom_transitions'} -> Label(
+    -text => 'I'
+  ) -> grid(-row => 0, -column => 5);
+  foreach my $trans (sort keys %{ $transitions{'increment'} }) {
+    # Create each transition selection element
+    $gui{'transitions'}{$trans}{'frame'} = $gui{'frame'}{'custom_transitions'} -> Checkbutton(
+      -variable => \$transitions{'frame'}{$trans},
+      -onvalue => 1,
+      -offvalue => 0
+    );
+    $gui{'transitions'}{$trans}{'increment'} = $gui{'frame'}{'custom_transitions'} -> Checkbutton(
+      -variable => \$transitions{'increment'}{$trans},
+      -onvalue => 1,
+      -offvalue => 0
+    );
+    $gui{'transitions'}{$trans}{'label'} = $gui{'frame'}{'custom_transitions'} -> Label(
+      -text => $trans
+    );
+    # Put each transition selection element into one of two columns
+    my $counter = keys %{ $gui{'transitions'} };
+    my $col;
+    my $row;
+    if ($counter <= $num_transitions / 2) {
+      $col = 1;
+      $row = $counter;
+    } else {
+      $col = 4;
+      $row = $counter - $num_transitions / 2;
+    }
+    $gui{'transitions'}{$trans}{'frame'} -> grid(-row => $row, -column => $col);
+    $gui{'transitions'}{$trans}{'increment'} -> grid(-row => $row, -column => $col + 1);
+    $gui{'transitions'}{$trans}{'label'} -> grid(-row => $row, -column => $col + 2);
+  }
+}
+
+sub getFile {
+  # read file type to get
+  my $file_type = $_[0];
+  my $other_type = ($file_type eq 'pdf') ? 'nav' : 'pdf';
+
+  # setup file dialog available filetypes
+  my %types = (
+    nav =>
+    [
+      ["Nav Files", '.nav', 'TEXT'],
+      ["All Files", "*"]
+    ],
+    pdf => 
+    [
+      ["Pdf Files", '.pdf', 'PDF'],
+      ["All Files", "*"]
+    ]
+  );
+
+  # open file dialog and get full filename
+  $files{$file_type}{'full'} = $gui{'mw'} -> getOpenFile(-filetypes => \@{ $types{$file_type} });
+  #if the other file isn't known, try to find it
+  if ($files{$other_type}{'full'} eq '' || ! defined $files{$other_type}{'full'}) {
+    $files{$other_type}{'full'} = findFile($files{$file_type}{'full'});
+  }
+}
+
+sub clearFile {
+  my $file_type = $_[0];
+  $files{$file_type}{'full'} = '';
+}
+
+#============================
+# Mode independant subs
+#============================
+
+#============================
+# Subs for finding, opening and closing files
+
+# sub that takes the full path of a specified file and returns the other file if possible
+sub findFile {
+  # burst the full file path into pieces
+  my $full_path = $_[0];
+  my ($vol,$path,$file) = File::Spec->splitpath( $full_path );
+  my @file_parts = split(/\./, $file);
+
+  # determine which file we have and which is needed
+  my $file_type = ( my $test = @file_parts > 1 ) ? pop @file_parts : '';
+  my $file_type_to_find = ( $file_type eq 'nav' || $file_type eq '' ) ? 'pdf' : 'nav';
+  # allows project names that have a dot the file_stem to remain consistant
+  unless ( $file_type eq 'nav' || $file_type eq 'pdf' ) { push @file_parts , $file_type; } 
+
+  # rebuild some file structures
+  my $file_stem = join('.', @file_parts);
+  my $full_dir = catdir($vol,$path);
+  my $file_to_find = join('.', $file_stem, $file_type_to_find);
+
+  # use File::Util to list all files in a directory and its subdirs
+  my $f = File::Util->new();
+  my @array_of_files = $f -> list_dir($full_dir, qw/--no-fsdots --recurse --files-only/);
+
+  my @candidate_files;
+  # cycle through the files in the directory to see if the file names match
+  foreach my $test_path (@array_of_files) {
+    my ($test_vol, $test_dir, $test_file) = File::Spec->splitpath( $test_path );
+    if ($test_file eq $file_to_find) {
+      push @candidate_files, $test_path;
+    } 
+  }
+  # if only one file found then return it
+  if (my $test = @candidate_files == 1) {
+    return $candidate_files[0];
+  } else {
+  # else return empty string, signaling the file wasn't found
+  return '';
+  }
+}
+
+sub openNav {
+  my $filename = $_[0];
+
+  if ($filename eq '') {
+    userMessage(
+      "Error",
+      "Please specify a .nav file."
+    );
+    return 0;
+  } elsif (! -e $filename) {
+    userMessage(
+      "Error",
+      "Cannot find file: " . $filename
+    );
+    return 0;
+  } else {
+    open(NAVFILE, $filename);
+    return 1;
+  }
+}
+
+sub openInfo {
+  my $filename = $_[0];
+
+  if ($filename eq '') {
+    userMessage(
+      "Error",
+      "Please specify a .pdf file."
+    );
+    return 0;
+  } elsif (! -e $filename) {
+    userMessage(
+      "Error",
+      "Cannot find file: " . $filename
+    );
+    return 0;
+  } else {
+    open(INFOFILE, ">", $filename . ".info");
+    return 1;
+  }
+}
+
+sub closeFiles {
+  close NAVFILE;
+  close INFOFILE;
+}
+
+#============================
+# Subs that perform the "meat" of the work
+
+# super-sub that controls all the actions to generate info file
+sub createInfo {
+  if (
+    openInfo($files{'pdf'}{'full'}) 
+    && openNav($files{'nav'}{'full'})
+  ) {
+    readNav();
+    writeInfo();
+    exitProgramFinished();
+  }
+}
+
+# sub to read the nav file. The information is fed into %pages and %sections.
+# by reading twice we are able to use the collapse relate frames (declared after sections) and sections
+sub readNav {
+  # first read through the nav file for framepages
+  while (<NAVFILE>) {
+    if($_ =~ m/framepages {(\d+)}{(\d+)}/) {
+      for ( my $i = $1; $i < $2; $i++) {
+        $pages{$i}{'page'} = $i;
+        $pages{$i}{'type'} = 'increment';
+        $pages{$i}{'is_section'} = 0;
+        $pages{$i}{'is_subsection'} = 0;
+        $pages{$i}{'to_collapse'} = 0;
+      }
+      $pages{$2}{'page'} = $2;
+      $pages{$2}{'type'} = 'frame';
+      $pages{$2}{'is_section'} = 0;
+      $pages{$2}{'is_subsection'} = 0;
+      $pages{$2}{'to_collapse'} = 0;
+    }
+  }
+  # go back to the top of the .nav file
+  seek(NAVFILE,0,0); 
+  # then read the file again to determine other information
+  while (<NAVFILE>) {
+    if($_ =~ m/\\sectionentry {(\d+)}{([^\}]+)}{(\d+)}.*/) {
+      $sections{$1}{'page'} = $3;
+      $sections{$1}{'title'} = $2;
+      $pages{$3}{'is_section'} = $1;
+    }
+    if($_ =~ m/\@subsectionentry {\d+}{(\d+)}{(\d+)}{(\d+)}{([^\}]+)}.*/) {
+      $pages{$3}{'is_subsection'} = $2;
+      $pages{$3}{'of_section'} = $1;
+      $sections{$1}{$2}{'page'} = $3;
+      $sections{$1}{$2}{'title'} = $4;
+      if ($sections{$1}{'page'} == $3 - 1 && $options{'collapse'}) {
+        $pages{ $sections{$1}{'page'} }{'to_collapse'} = 1;
+      }
+    }
+  }
+}
+
+sub writeInfo {
+  print INFOFILE "PageProps = {\n";
+  foreach my $page (sort { $a <=> $b } keys %pages) {
+    print INFOFILE "  " . $pages{$page}{'page'} . ":\t{\n";
+    if ($pages{$page}{'type'} eq 'increment' || $pages{$page}{'to_collapse'}) {
+      print INFOFILE "\t  \'overview\': False,\n";
+    }
+    if ($pages{$page}{'is_section'}) {
+      print INFOFILE "\t  \'title\': \"" . $sections{ $pages{$page}{'is_section'} }{'title'} . "\",\n";
+    } elsif ($page == 1) {
+      print INFOFILE "\t  \'title\': \"Title\",\n";
+    }
+    if ($pages{$page}{'is_subsection'}) {
+      print INFOFILE "\t  \'title\': \"" . $sections{ $pages{$page}{'of_section'} }{'title'} . ": " . $sections{ $pages{$page}{'of_section'} }{ $pages{$page}{'is_subsection'} }{'title'} . "\",\n";
+    }
+    if (
+      $pages{$page}{'type'} eq 'frame' 
+      && ! $pages{$page}{'to_collapse'} 
+      && $options{'transition_set'} ne 'default'
+    ) {
+      print INFOFILE "\t  \'transition\': " . getFrameTransition() . ",\n";
+    }
+    print INFOFILE "\t},\n";
+  }
+  print INFOFILE "}\n";
+  unless ($options{'transition_set'} eq 'default') {
+    print INFOFILE "AvailableTransitions = [";
+    print INFOFILE join(", ", getOverallTransitions());
+    print INFOFILE "]";
+  }
+}
+
+#============================
+# Subs that select certain transitions in certain cases
+
+sub getFrameTransition {
+  my $result;
+  if ($options{'transition_set'} eq 'custom') { 
+    $result = getRandomElement(getArray(\%{ $transitions{'frame'} }));
+  } elsif ($options{'transition_set'} eq 'clean') {
+    $result = $clean{'frame'};
+  } elsif ($options{'transition_set'} eq 'preset') {
+    $result = getRandomElement( @{ $preset{'frame'} } );
+  }
+  return $result;
+}
+
+sub getOverallTransitions {
+  my @result;
+  if ($options{'transition_set'} eq 'custom') {
+    @result = getArray(\%{ $transitions{'increment'} });
+  } elsif ($options{'transition_set'} eq 'clean') {
+    @result = @{ $clean{'increment'} };
+  } elsif ($options{'transition_set'} eq 'preset') {
+    @result = @{ $preset{'increment'} };
+  }
+  return @result;
+}
+
+#============================
+# Other simple subs for general use
+
+# Sub that displays "about" information
+# Possibly to be deprecated and replaced with a version sub and a usage sub
+sub aboutMBI {
+  userMessage(
+    "About MakeBeamerInfo",
+    "Version: " . $version_number
+  );
+}
+
+# Sub (mostly for GUI) to display an exit message and quit before attempting to create an info file
+sub exitProgramEarly {
+  userMessage(
+    "Goodbye",
+    "No .info file has been created!"
+  );
+  exit;
+}
+
+# Sub that after creation of an info file files, says goodbye and quits
+sub exitProgramFinished {
+  userMessage(
+    "Goodbye",
+    "Your .info file has been created."
+  );
+  closeFiles();
+  exit();
+}
+
+# Mode independant sub for returning messages
+sub userMessage {
+  my ($MessageTitle,$Message) = @_;
+  if ($if_gui) {
+    $gui{'mw'} -> messageBox(-title=>"$MessageTitle", -message=>"$Message");
+  } else {
+    print $MessageTitle . ":\n" . $Message . "\n";
+  }
+}
+
+#============================
+# Simple Functions to perform actions with data structures
+
+# Sub that sets the Custom transitions to the clean state, used for initialization
+sub setInitialCustom {
+  foreach my $trans (keys %{ $transitions{'increment'} }) {
+    $transitions{'increment'}{$trans} = 0;
+  }
+  foreach my $trans (@{ $clean{'increment'} }) {
+    $transitions{'increment'}{$trans} = 1;
+  }
+  foreach my $trans (keys %{ $transitions{'frame'} }) {
+    $transitions{'frame'}{$trans} = 0;
+  }
+  foreach my $trans (@{ $preset{'frame'} }) {
+    $transitions{'frame'}{$trans} = 1;
+  }
+}
+
+# Sub to return the contents of a random element of an array
+sub getRandomElement {
+  my @input = @_;
+  my $length = @input;
+  my $rand = int(rand($length));
+  my $return = $input[$rand];
+  # prevent repeated transitions
+  while ($length > 1 && $return eq $last_transition) {
+    $rand = int(rand($length));
+    $return = $input[$rand];
+  }
+  $last_transition = $return;
+  return $return;
+}
+
+# Sub that takes a hash of keys whose values are 1 or 0 and returns the keys of the 1s as an array
+sub getArray {
+  my %input = %{ $_[0] };
+  my @result;
+  foreach my $key (keys %input) {
+    if ($input{$key}) {
+      push @result , $key; 
+    } 
+  }
+  return @result;
+}
+
+#============================
+# Debugging Functions (probably outdated)
+
+# print the state of transition selections to STDOUT
+sub printTransitions {
+  print "Incremental transition state:\n";
+  foreach my $key (keys %{ $transitions{'increment'} }) {
+    print "  " . $key . " = " . $transitions{'increment'}{$key} . "\n";
+  }
+  print "Frame transition: " . $transitions{'frame'} . "\n";
+}
+
+#print the state of page information to STOUT
+sub printPages {
+  print "Page information:\n";
+  foreach my $page (sort { $a <=> $b } keys %pages) {
+    print "  Page number: " . $pages{$page}{'page'} . "\n";
+    print "         type: " . $pages{$page}{'type'} . "\n";
+    if ($pages{$page}{'is_section'}) {
+      print "        title: " .$sections{ $pages{$page}{'is_section'} }{'title'} . "\n"; 
+    }
+    if ($pages{$page}{'is_subsection'}) {
+      print "        title: " . $sections{ $pages{$page}{'of_section'} }{'title'} . ": " . $sections{ $pages{$page}{'of_section'} }{ $pages{$page}{'is_subsection'} }{'title'} . "\n"; 
+    }
+    if ($pages{$page}{'to_collapse'}) {
+      print "     To be collapsed!\n";
+    }
+  }
+}
+
+## POD (my editor doesn't highlight after END tag)
+
+=head1 NAME
+
+makebeamerinfo
+
+=head1 VERSION
+
+2.0.0b2
+
+=head1 SYNOPSIS
+
+  makebeamerinfo 			# Starts the program in GUI mode
+  makebeamerinfo -p document.pdf	# Creates .info file using document.pdf and document.nav
+  makebeamerinfo -n document.nav	# Creates .info file using document.pdf and document.nav
+  makebeamerinfo --help/-h 		# Shows a usage message
+
+=head1 DESCRIPTION
+
+Impressive is a pdf view that aids in viewing presentations made in LaTeX Beamer. Impressive uses a .info control file to specify the transitions used between pages. While is file isn't necessary, the Beamer-based presentation can be presented in a much more consistant style when the .info file is tuned to the individual presentation. C<makebeamerinfo> is designed to create this file based on an auxiliary file (.nav) that Beamer creates in parallel with the presentation. It also does not require any configuration or tags in the presentation source.
+
+=head1 USAGE
+
+For now please refer to L</SYNOPSIS>.
+
+=cut
+
