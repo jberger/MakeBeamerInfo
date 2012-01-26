@@ -575,7 +575,7 @@ sub writeInfo {
 sub getFrameTransition {
   my $result;
   if ($options{'transition_set'} eq 'custom') { 
-    $result = getRandomElement(getArray(\%{ $transitions{'frame'} }));
+    $result = getRandomElement(getTrue( $transitions{'frame'} ));
   } elsif ($options{'transition_set'} eq 'clean') {
     $result = $clean{'frame'};
   } elsif ($options{'transition_set'} eq 'preset') {
@@ -587,7 +587,7 @@ sub getFrameTransition {
 sub getOverallTransitions {
   my @result;
   if ($options{'transition_set'} eq 'custom') {
-    @result = getArray(\%{ $transitions{'increment'} });
+    @result = getTrue( $transitions{'increment'} );
   } elsif ($options{'transition_set'} eq 'clean') {
     @result = @{ $clean{'increment'} };
   } elsif ($options{'transition_set'} eq 'preset') {
@@ -670,16 +670,10 @@ sub getRandomElement {
   return $return;
 }
 
-# Sub that takes a hash of keys whose values are 1 or 0 and returns the keys of the 1s as an array
-sub getArray {
-  my %input = %{ $_[0] };
-  my @result;
-  foreach my $key (keys %input) {
-    if ($input{$key}) {
-      push @result , $key; 
-    } 
-  }
-  return @result;
+# get the hash keys whose values are true
+sub getTrue {
+  my $input = shift;
+  return grep { $input->{$_} } keys %$input;
 }
 
 ## POD (my editor doesn't highlight after END tag)
