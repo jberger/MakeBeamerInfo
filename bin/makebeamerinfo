@@ -62,23 +62,15 @@ my $if_gui; # boolean of operational mode, 1 = GUI, 0 = CLI
 
 BEGIN {
   $help = 0;
-  $if_gui = 1; # If no options given assume GUI mode
-  $opt_nav = '';
-  $opt_pdf = '';
+  $if_gui = 0; # If no options given assume CLI mode
   GetOptions(
+    'gui' => \$if_gui,
     'help|?' => \$help,
     'nav:s' => \$opt_nav,
     'pdf:s' => \$opt_pdf
   );
-  # If file locations are specified on the command line or if information is requested run as command line
-  if (
-    $opt_nav ne ''
-    || $opt_pdf ne '' 
-    || $help == 1 
-  ) {
-    $if_gui = 0;
-  }
 }
+
 # If GUI is to be used load additional modules
 use if $if_gui, 'Tk';
 use if $if_gui, 'Tk::LabFrame';
@@ -185,15 +177,15 @@ sub runCLI {
     exit;
   }
   if (defined $opt_pdf && $opt_pdf ne '') {
-    $files{'pdf'}{'full'} = abs_path($opt_pdf);
+    $files{'pdf'} = abs_path($opt_pdf);
     unless (defined $opt_nav && $opt_nav ne '') {
-      $files{'nav'}{'full'} = findFile(abs_path($opt_pdf));
+      $files{'nav'} = findFile(abs_path($opt_pdf));
     }
   }
   if (defined $opt_nav && $opt_nav ne '') {
-    $files{'nav'}{'full'} = abs_path($opt_nav);
+    $files{'nav'} = abs_path($opt_nav);
     unless (defined $opt_pdf && $opt_pdf ne '') {
-      $files{'pdf'}{'full'} = findFile(abs_path($opt_nav));
+      $files{'pdf'} = findFile(abs_path($opt_nav));
     }
   }
   createInfo();
@@ -268,7 +260,7 @@ sub createMainWindow {# Sub to create GUI
   $gui{'entry'}{'pdf'} = $gui{'frame'}{'locations'} -> LabEntry(
     -label => ".pdf file",
     -labelPack => [-side => "left"],
-    -textvariable => \$files{'pdf'}{'full'}
+    -textvariable => \$files{'pdf'}
   ) -> grid(-row => 1, -column => 1);
   $gui{'button'}{'pdf'}{'get'} = $gui{'frame'}{'locations'} -> Button(
     -text => "Browse",
@@ -281,7 +273,7 @@ sub createMainWindow {# Sub to create GUI
   $gui{'entry'}{'nav'} = $gui{'frame'}{'locations'} -> LabEntry(
     -label => ".nav file",
     -labelPack => [-side => "left"],
-    -textvariable => \$files{'nav'}{'full'}
+    -textvariable => \$files{'nav'}
   ) -> grid(-row => 2, -column => 1);
   $gui{'button'}{'nav'}{'get'} = $gui{'frame'}{'locations'} -> Button(
     -text => "Browse",
@@ -405,16 +397,16 @@ sub getFile {
   );
 
   # open file dialog and get full filename
-  $files{$file_type}{'full'} = $gui{'mw'} -> getOpenFile(-filetypes => \@{ $types{$file_type} });
+  $files{$file_type} = $gui{'mw'} -> getOpenFile(-filetypes => \@{ $types{$file_type} });
   #if the other file isn't known, try to find it
-  if ($files{$other_type}{'full'} eq '' || ! defined $files{$other_type}{'full'}) {
-    $files{$other_type}{'full'} = findFile($files{$file_type}{'full'});
+  if ($files{$other_type} eq '' || ! defined $files{$other_type}) {
+    $files{$other_type} = findFile($files{$file_type});
   }
 }
 
 sub clearFile {
   my $file_type = $_[0];
-  $files{$file_type}{'full'} = '';
+  $files{$file_type} = '';
 }
 
 #============================
@@ -482,9 +474,9 @@ sub openFile {
 
 # super-sub that controls all the actions to generate info file
 sub createInfo {
-  my $nav = openFile($files{'nav'}{'full'}, 'nav', '<');
+  my $nav = openFile($files{'nav'}, 'nav', '<');
   readNav($nav);
-  my $info = openFile($files{'pdf'}{'full'} . '.info', 'info', '>');
+  my $info = openFile($files{'pdf'} . '.info', 'info', '>');
   writeInfo($info);
   exitProgramFinished();
 }
@@ -677,36 +669,6 @@ sub getArray {
     } 
   }
   return @result;
-}
-
-#============================
-# Debugging Functions (probably outdated)
-
-# print the state of transition selections to STDOUT
-sub printTransitions {
-  print "Incremental transition state:\n";
-  foreach my $key (keys %{ $transitions{'increment'} }) {
-    print "  " . $key . " = " . $transitions{'increment'}{$key} . "\n";
-  }
-  print "Frame transition: " . $transitions{'frame'} . "\n";
-}
-
-#print the state of page information to STOUT
-sub printPages {
-  print "Page information:\n";
-  foreach my $page (sort { $a <=> $b } keys %pages) {
-    print "  Page number: " . $pages{$page}{'page'} . "\n";
-    print "         type: " . $pages{$page}{'type'} . "\n";
-    if ($pages{$page}{'is_section'}) {
-      print "        title: " .$sections{ $pages{$page}{'is_section'} }{'title'} . "\n"; 
-    }
-    if ($pages{$page}{'is_subsection'}) {
-      print "        title: " . $sections{ $pages{$page}{'of_section'} }{'title'} . ": " . $sections{ $pages{$page}{'of_section'} }{ $pages{$page}{'is_subsection'} }{'title'} . "\n"; 
-    }
-    if ($pages{$page}{'to_collapse'}) {
-      print "     To be collapsed!\n";
-    }
-  }
 }
 
 ## POD (my editor doesn't highlight after END tag)
