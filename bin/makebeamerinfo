@@ -273,7 +273,7 @@ sub readNav {
 
   # first read through the nav file for framepages
   while (<$nav>) {
-    if($_ =~ m/framepages {(\d+)}{(\d+)}/) {
+    if( /framepages {(\d+)}{(\d+)}/ ) {
       for ( my $i = $1; $i < $2; $i++) {
         $pages{$i}{'page'} = $i;
         $pages{$i}{'type'} = 'increment';
@@ -292,12 +292,12 @@ sub readNav {
   seek($nav,0,0); 
   # then read the file again to determine other information
   while (<$nav>) {
-    if($_ =~ m/\\sectionentry {(\d+)}{([^\}]+)}{(\d+)}.*/) {
+    if( /\\sectionentry {(\d+)}{([^\}]+)}{(\d+)}/ ) {
       $sections{$1}{'page'} = $3;
       $sections{$1}{'title'} = $2;
       $pages{$3}{'is_section'} = $1;
     }
-    if($_ =~ m/\@subsectionentry {\d+}{(\d+)}{(\d+)}{(\d+)}{([^\}]+)}.*/) {
+    if( /\@subsectionentry {\d+}{(\d+)}{(\d+)}{(\d+)}{([^\}]+)}/ ) {
       $pages{$3}{'is_subsection'} = $2;
       $pages{$3}{'of_section'} = $1;
       $sections{$1}{$2}{'page'} = $3;
@@ -402,11 +402,11 @@ sub exitProgramFinished {
 
 # Mode independant sub for returning messages
 sub userMessage {
-  my ($MessageTitle,$Message) = @_;
+  my ($title, $message) = @_;
   if ($if_gui) {
-    $gui{'mw'} -> messageBox(-title=>"$MessageTitle", -message=>"$Message");
+    $gui{'mw'} -> messageBox(-title=> $title, -message=> $message);
   } else {
-    print $MessageTitle . ":\n" . $Message . "\n";
+    print "$title:\n$message\n";
   }
 }
 
