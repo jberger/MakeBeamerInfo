@@ -327,7 +327,7 @@ sub createMainWindow {# Sub to create GUI
     -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
   ) -> grid(-row => 3, -column => 1);
   $gui{'label'}{'preset'} = $gui{'frame'}{'transition_set'} -> Label(
-    -text => 'Beamer (sane)' # Formerly Preset
+    -text => 'Sane Preset' # Formerly Preset
   ) -> grid(-row => 3, -column => 2);
 
   $gui{'radio'}{'custom'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
