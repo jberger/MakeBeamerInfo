@@ -658,7 +658,7 @@ sub getFile {
   # open file dialog and get full filename
   $files{$file_type} = $gui{'mw'} -> getOpenFile(-filetypes => \@{ $types{$file_type} });
   #if the other file isn't known, try to find it
-  if ($files{$other_type} eq '' || ! defined $files{$other_type}) {
+  unless ( $files{$other_type} ) {
     $files{$other_type} = findFile($files{$file_type});
   }
 }
