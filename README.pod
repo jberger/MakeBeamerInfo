@@ -8,24 +8,38 @@ makebeamerinfo
 
 =head1 SYNOPSIS
 
-  # GUI
-  makebeamerinfo 			# No args starts the program in GUI mode
-  makebeamerinfo --gui/-g		# Explicitly request GUI mode (may use file specifiers below)
-
-  # CLI
-  makebeamerinfo -p document.pdf	# Explicitly specify location of .pdf file
-  makebeamerinfo -n document.nav	# Explicitly specify location of .nav file
-  makebeamerinfo filename		# Specify the location of a file whose type is inferred
-
-  makebeamerinfo --help/-h 		# Shows a usage message
+  makebeamerinfo                        # No args starts the program in GUI mode
+  makebeamerinfo -p document.pdf        # Explicitly specify location of .pdf file
+  makebeamerinfo --help/-h              # Shows a usage message
 
 =head1 DESCRIPTION
 
-Impressive is a pdf view that aids in viewing presentations made in LaTeX Beamer. Impressive uses a .info control file to specify the transitions used between pages. While is file isn't necessary, the Beamer-based presentation can be presented in a much more consistant style when the .info file is tuned to the individual presentation. C<makebeamerinfo> is designed to create this file based on an auxiliary file (.nav) that Beamer creates in parallel with the presentation. It also does not require any configuration or tags in the presentation source.
+Impressive is a pdf view that aids in viewing presentations made in LaTeX Beamer. Impressive uses a .info control file to specify the transitions used between pages. While is file isn't necessary, the Beamer-based presentation can be presented in a much more consistant style when the .info file is tuned to the individual presentation. C<makebeamerinfo> is designed to create this file based on an auxiliary file (F<.nav>) that Beamer creates in parallel with the presentation. It also does not require any configuration or tags in the presentation source.
 
-=head1 USAGE
+=head1 OPTIONS AND ARGUMENTS
 
-For now please refer to L</SYNOPSIS>.
+  makebeamerinfo [arguments] [files]
+
+  Run with no arguments or files starts the program in GUI mode
+
+  -g
+  --gui 
+      Explicitly request GUI mode
+
+  -p
+  --pdf
+      Explicitly specify location of .pdf file
+
+  -n
+  --nav
+      Explicitly specify location of .nav file
+
+  Additional files may be specified without flags,
+  their file type(s) will be inferred by file extension
+
+  -h
+  --help
+      Shows a usage message and exit. Overrides all other options.
 
 =cut
 
