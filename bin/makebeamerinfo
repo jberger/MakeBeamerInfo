@@ -69,6 +69,8 @@ BEGIN {
     'nav:s'  => \$opt_nav,
     'pdf:s'  => \$opt_pdf,
   );
+
+  $if_gui = 0 if $help;
 }
 
 # If help flag was passed
