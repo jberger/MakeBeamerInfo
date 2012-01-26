@@ -437,20 +437,15 @@ sub clearFile {
 # sub that takes the full path of a specified file and returns the other file if possible
 sub findFile {
   # burst the full file path into pieces
-  my $full_path = $_[0];
+  my $full_path = shift;
   my ($vol,$path,$file) = File::Spec->splitpath( $full_path );
-  my @file_parts = split(/\./, $file);
 
-  # determine which file we have and which is needed
-  my $file_type = ( my $test = @file_parts > 1 ) ? pop @file_parts : '';
-  my $file_type_to_find = ( $file_type eq 'nav' || $file_type eq '' ) ? 'pdf' : 'nav';
-  # allows project names that have a dot the file_stem to remain consistant
-  unless ( $file_type eq 'nav' || $file_type eq 'pdf' ) { push @file_parts , $file_type; } 
-
-  # rebuild some file structures
-  my $file_stem = join('.', @file_parts);
-  my $full_dir = catdir($vol,$path);
-  my $file_to_find = join('.', $file_stem, $file_type_to_find);
+  my $file_to_find = $file;
+  if ($file =~ /\.nav$/) {
+    $file_to_find =~ s/\.nav$/\.pdf/;
+  } elsif ($file =~ /\.pdf$/) {
+    $file_to_find =~ s/\.pdf$/\.nav/;
+  } 
 
   my $found = '';
   my $wanted = sub { 
@@ -459,7 +454,7 @@ sub findFile {
       $found = $File::Find::name;
     }
   };
-  find( $wanted , $full_dir );
+  find( $wanted , File::Spec->catpath($vol,$path) );
 
   return $found;
 }
@@ -492,17 +487,15 @@ sub openFile {
 
 # super-sub that controls all the actions to generate info file
 sub createInfo {
-  my $nav = openFile($files{'nav'}, 'nav', '<');
-  readNav($nav);
-  my $info = openFile($files{'pdf'} . '.info', 'info', '>');
-  writeInfo($info);
+  readNav();
+  writeInfo();
   exitProgramFinished();
 }
 
 # sub to read the nav file. The information is fed into %pages and %sections.
 # by reading twice we are able to use the collapse relate frames (declared after sections) and sections
 sub readNav {
-  my $nav = shift;
+  my $nav = openFile($files{'nav'}, 'nav', '<');
 
   # first read through the nav file for framepages
   while (<$nav>) {
@@ -543,7 +536,7 @@ sub readNav {
 }
 
 sub writeInfo {
-  my $info = shift;
+  my $info = openFile($files{'pdf'} . '.info', 'info', '>');
 
   print $info "PageProps = {\n";
   foreach my $page (sort { $a <=> $b } keys %pages) {
