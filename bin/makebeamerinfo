@@ -688,9 +688,15 @@ makebeamerinfo
 
 =head1 SYNOPSIS
 
-  makebeamerinfo 			# Starts the program in GUI mode
-  makebeamerinfo -p document.pdf	# Creates .info file using document.pdf and document.nav
-  makebeamerinfo -n document.nav	# Creates .info file using document.pdf and document.nav
+  # GUI
+  makebeamerinfo 			# No args starts the program in GUI mode
+  makebeamerinfo --gui/-g		# Explicitly request GUI mode (may use file specifiers below)
+
+  # CLI
+  makebeamerinfo -p document.pdf	# Explicitly specify location of .pdf file
+  makebeamerinfo -n document.nav	# Explicitly specify location of .nav file
+  makebeamerinfo filename		# Specify the location of a file whose type is inferred
+
   makebeamerinfo --help/-h 		# Shows a usage message
 
 =head1 DESCRIPTION
