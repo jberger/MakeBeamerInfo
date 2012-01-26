@@ -42,7 +42,7 @@ my $version_number = "2.0.0b2";
 
 # Load package to increase portability
 use Cwd 'abs_path';
-use File::Util;
+use File::Find;
 use File::Spec::Functions;
 
 # In order to combine CLI and GUI into one script and parse CLI options
@@ -442,72 +442,39 @@ sub findFile {
   my $full_dir = catdir($vol,$path);
   my $file_to_find = join('.', $file_stem, $file_type_to_find);
 
-  # use File::Util to list all files in a directory and its subdirs
-  my $f = File::Util->new();
-  my @array_of_files = $f -> list_dir($full_dir, qw/--no-fsdots --recurse --files-only/);
+  my $found = '';
+  my $wanted = sub { 
+    return if $found;
+    if ($_ eq $file_to_find) {
+      $found = $File::Find::name;
+    }
+  };
+  find( $wanted , $full_dir );
 
-  my @candidate_files;
-  # cycle through the files in the directory to see if the file names match
-  foreach my $test_path (@array_of_files) {
-    my ($test_vol, $test_dir, $test_file) = File::Spec->splitpath( $test_path );
-    if ($test_file eq $file_to_find) {
-      push @candidate_files, $test_path;
-    } 
-  }
-  # if only one file found then return it
-  if (my $test = @candidate_files == 1) {
-    return $candidate_files[0];
-  } else {
-  # else return empty string, signaling the file wasn't found
-  return '';
-  }
+  return $found;
 }
 
-sub openNav {
-  my $filename = $_[0];
+sub openFile {
+  my ($filename, $type, $mode) = @_;
 
-  if ($filename eq '') {
+  unless ($filename) {
     userMessage(
       "Error",
-      "Please specify a .nav file."
+      "Please specify a .$type file."
     );
-    return 0;
-  } elsif (! -e $filename) {
+    exitProgramEarly();
+  } 
+
+  my $handle;
+  unless ( open($handle, $mode, $filename) ) {
     userMessage(
       "Error",
-      "Cannot find file: " . $filename
+      "Could not open $filename: $!"
     );
-    return 0;
-  } else {
-    open(NAVFILE, $filename);
-    return 1;
+    exitProgramEarly();
   }
-}
 
-sub openInfo {
-  my $filename = $_[0];
-
-  if ($filename eq '') {
-    userMessage(
-      "Error",
-      "Please specify a .pdf file."
-    );
-    return 0;
-  } elsif (! -e $filename) {
-    userMessage(
-      "Error",
-      "Cannot find file: " . $filename
-    );
-    return 0;
-  } else {
-    open(INFOFILE, ">", $filename . ".info");
-    return 1;
-  }
-}
-
-sub closeFiles {
-  close NAVFILE;
-  close INFOFILE;
+  return $handle;
 }
 
 #============================
@@ -515,21 +482,20 @@ sub closeFiles {
 
 # super-sub that controls all the actions to generate info file
 sub createInfo {
-  if (
-    openInfo($files{'pdf'}{'full'}) 
-    && openNav($files{'nav'}{'full'})
-  ) {
-    readNav();
-    writeInfo();
-    exitProgramFinished();
-  }
+  my $nav = openFile($files{'nav'}{'full'}, 'nav', '<');
+  readNav($nav);
+  my $info = openFile($files{'pdf'}{'full'} . '.info', 'info', '>');
+  writeInfo($info);
+  exitProgramFinished();
 }
 
 # sub to read the nav file. The information is fed into %pages and %sections.
 # by reading twice we are able to use the collapse relate frames (declared after sections) and sections
 sub readNav {
+  my $nav = shift;
+
   # first read through the nav file for framepages
-  while (<NAVFILE>) {
+  while (<$nav>) {
     if($_ =~ m/framepages {(\d+)}{(\d+)}/) {
       for ( my $i = $1; $i < $2; $i++) {
         $pages{$i}{'page'} = $i;
@@ -546,9 +512,9 @@ sub readNav {
     }
   }
   # go back to the top of the .nav file
-  seek(NAVFILE,0,0); 
+  seek($nav,0,0); 
   # then read the file again to determine other information
-  while (<NAVFILE>) {
+  while (<$nav>) {
     if($_ =~ m/\\sectionentry {(\d+)}{([^\}]+)}{(\d+)}.*/) {
       $sections{$1}{'page'} = $3;
       $sections{$1}{'title'} = $2;
@@ -567,34 +533,36 @@ sub readNav {
 }
 
 sub writeInfo {
-  print INFOFILE "PageProps = {\n";
+  my $info = shift;
+
+  print $info "PageProps = {\n";
   foreach my $page (sort { $a <=> $b } keys %pages) {
-    print INFOFILE "  " . $pages{$page}{'page'} . ":\t{\n";
+    print $info "  " . $pages{$page}{'page'} . ":\t{\n";
     if ($pages{$page}{'type'} eq 'increment' || $pages{$page}{'to_collapse'}) {
-      print INFOFILE "\t  \'overview\': False,\n";
+      print $info "\t  \'overview\': False,\n";
     }
     if ($pages{$page}{'is_section'}) {
-      print INFOFILE "\t  \'title\': \"" . $sections{ $pages{$page}{'is_section'} }{'title'} . "\",\n";
+      print $info "\t  \'title\': \"" . $sections{ $pages{$page}{'is_section'} }{'title'} . "\",\n";
     } elsif ($page == 1) {
-      print INFOFILE "\t  \'title\': \"Title\",\n";
+      print $info "\t  \'title\': \"Title\",\n";
     }
     if ($pages{$page}{'is_subsection'}) {
-      print INFOFILE "\t  \'title\': \"" . $sections{ $pages{$page}{'of_section'} }{'title'} . ": " . $sections{ $pages{$page}{'of_section'} }{ $pages{$page}{'is_subsection'} }{'title'} . "\",\n";
+      print $info "\t  \'title\': \"" . $sections{ $pages{$page}{'of_section'} }{'title'} . ": " . $sections{ $pages{$page}{'of_section'} }{ $pages{$page}{'is_subsection'} }{'title'} . "\",\n";
     }
     if (
       $pages{$page}{'type'} eq 'frame' 
       && ! $pages{$page}{'to_collapse'} 
       && $options{'transition_set'} ne 'default'
     ) {
-      print INFOFILE "\t  \'transition\': " . getFrameTransition() . ",\n";
+      print $info "\t  \'transition\': " . getFrameTransition() . ",\n";
     }
-    print INFOFILE "\t},\n";
+    print $info "\t},\n";
   }
-  print INFOFILE "}\n";
+  print $info "}\n";
   unless ($options{'transition_set'} eq 'default') {
-    print INFOFILE "AvailableTransitions = [";
-    print INFOFILE join(", ", getOverallTransitions());
-    print INFOFILE "]";
+    print $info "AvailableTransitions = [";
+    print $info join(", ", getOverallTransitions());
+    print $info "]";
   }
 }
 
@@ -643,7 +611,7 @@ sub exitProgramEarly {
     "Goodbye",
     "No .info file has been created!"
   );
-  exit;
+  die();
 }
 
 # Sub that after creation of an info file files, says goodbye and quits
@@ -652,7 +620,6 @@ sub exitProgramFinished {
     "Goodbye",
     "Your .info file has been created."
   );
-  closeFiles();
   exit();
 }
 
