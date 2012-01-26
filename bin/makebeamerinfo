@@ -275,17 +275,9 @@ sub readNav {
   while (<$nav>) {
     if( /framepages {(\d+)}{(\d+)}/ ) {
       for ( my $i = $1; $i < $2; $i++) {
-        $pages{$i}{'page'} = $i;
-        $pages{$i}{'type'} = 'increment';
-        $pages{$i}{'is_section'} = 0;
-        $pages{$i}{'is_subsection'} = 0;
-        $pages{$i}{'to_collapse'} = 0;
+        $pages{$i} = { page => $i, type => 'increment' };
       }
-      $pages{$2}{'page'} = $2;
-      $pages{$2}{'type'} = 'frame';
-      $pages{$2}{'is_section'} = 0;
-      $pages{$2}{'is_subsection'} = 0;
-      $pages{$2}{'to_collapse'} = 0;
+      $pages{$2} = { page => $2, type => 'frame' };
     }
   }
   # go back to the top of the .nav file
