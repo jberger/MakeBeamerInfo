@@ -62,13 +62,19 @@ my $if_gui; # boolean of operational mode, 1 = GUI, 0 = CLI
 
 BEGIN {
   $help = 0;
-  $if_gui = 0; # If no options given assume CLI mode
+  $if_gui = ! @ARGV; # If no options given assume GUI mode
   GetOptions(
-    'gui' => \$if_gui,
+    'gui'    => \$if_gui,
     'help|?' => \$help,
-    'nav:s' => \$opt_nav,
-    'pdf:s' => \$opt_pdf
+    'nav:s'  => \$opt_nav,
+    'pdf:s'  => \$opt_pdf,
   );
+}
+
+# If help flag was passed
+if ($help) {
+  pod2usage(0);
+  exit;
 }
 
 # If GUI is to be used load additional modules
@@ -159,6 +165,32 @@ $options{'transition_set'} = 'clean'; # set the initial transition set to "clean
 my $last_transition; # holder for making sure that the next random transition is not the same as the last
 
 #============================
+# Use known information to find files
+
+while (@ARGV) {
+  my $arg = shift @ARGV;
+  
+  if ($arg =~ /\.nav$/) {
+    $opt_nav = $arg;
+  }
+
+  if ($arg =~ /\.pdf$/) {
+    $opt_pdf = $arg;
+  }
+}
+
+$files{pdf} = abs_path($opt_pdf) if $opt_pdf;
+$files{nav} = abs_path($opt_nav) if $opt_nav;
+
+if (! $files{pdf} and $files{nav}) {
+  $files{pdf} = findFile( $files{nav} );
+}
+
+if (! $files{nav} and $files{pdf}) {
+  $files{nav} = findFile( $files{pdf} );
+}
+
+#============================
 # Start one interface or the other
 
 if ($if_gui) {
@@ -172,22 +204,6 @@ if ($if_gui) {
 #============================
 
 sub runCLI {
-  if ($help) {
-    pod2usage(0);
-    exit;
-  }
-  if (defined $opt_pdf && $opt_pdf ne '') {
-    $files{'pdf'} = abs_path($opt_pdf);
-    unless (defined $opt_nav && $opt_nav ne '') {
-      $files{'nav'} = findFile(abs_path($opt_pdf));
-    }
-  }
-  if (defined $opt_nav && $opt_nav ne '') {
-    $files{'nav'} = abs_path($opt_nav);
-    unless (defined $opt_pdf && $opt_pdf ne '') {
-      $files{'pdf'} = findFile(abs_path($opt_nav));
-    }
-  }
   createInfo();
 }
 
@@ -603,7 +619,7 @@ sub exitProgramEarly {
     "Goodbye",
     "No .info file has been created!"
   );
-  die();
+  exit(1);
 }
 
 # Sub that after creation of an info file files, says goodbye and quits
