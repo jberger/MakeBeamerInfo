@@ -116,11 +116,11 @@ sub _hunt_for_files {
   my $files = $self->{files};
 
   if (! $files->{pdf} and $files->{nav}) {
-    $files->{pdf} = findFile( $files->{nav} );
+    $files->{pdf} = $self->findFile( $files->{nav} );
   }
 
   if (! $files->{nav} and $files->{pdf}) {
-    $files->{nav} = findFile( $files->{pdf} );
+    $files->{nav} = $self->findFile( $files->{pdf} );
   }
 }
 
@@ -230,7 +230,7 @@ sub readNav {
 
   # if a handle is given as an arg use it. This is for testing.
   my $nav = @_ ? shift :
-    openFile($self->{files}{'nav'}, 'nav', '<');
+    $self->openFile($self->{files}{'nav'}, 'nav', '<');
 
   my $pages = $self->{pages};
   my $sections = $self->{sections};
@@ -271,7 +271,7 @@ sub writeInfo {
 
   # if a handle is given as an arg use it. This is for testing.
   my $info = @_ ? shift : 
-    openFile($self->{files}{'pdf'} . '.info', 'info', '>');
+    $self->openFile($self->{files}{'pdf'} . '.info', 'info', '>');
 
   my $pages = $self->{pages};
   my $sections = $self->{sections};
