@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More;
+use Test::More tests => 3;
 
 use_ok('App::makebeamerinfo');
 use_ok('App::makebeamerinfo::CLI');
@@ -16,6 +16,4 @@ SKIP: {
   skip "Tk not found", 1 unless $have_tk;
   use_ok('App::makebeamerinfo::GUI');
 }
-
-done_testing;
 
