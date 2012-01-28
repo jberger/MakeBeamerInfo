@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use File::Temp ();
-use File::Compare;
 
 use App::makebeamerinfo;
 
