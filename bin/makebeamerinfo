@@ -71,6 +71,20 @@ BEGIN {
   );
 
   $if_gui = 0 if $help;
+
+  if ($if_gui) {
+    eval { require Tk };
+    if ($@) {
+      print <<MESSAGE;
+Error: makebeamerinfo's "GUI mode" requires the Tk module to be installed.
+
+Installation may be accomplished from CPAN using the command `cpan Tk` with
+apropriate permissions. Many system package managers also provide Tk, on
+Ubuntu Linux `sudo apt-get install perl-tk` should do the trick.
+MESSAGE
+      exit(1);
+    }
+  }
 }
 
 # If help flag was passed
@@ -294,7 +308,7 @@ sub readNav {
       $pages{$3}{'of_section'} = $1;
       $sections{$1}{$2}{'page'} = $3;
       $sections{$1}{$2}{'title'} = $4;
-      if ($sections{$1}{'page'} == $3 - 1 && $options{'collapse'}) {
+      if ($sections{$1}{'page'} == ($3 - 1) && $options{'collapse'}) {
         $pages{ $sections{$1}{'page'} }{'to_collapse'} = 1;
       }
     }
