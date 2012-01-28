@@ -120,11 +120,11 @@ $app->run;
 
 =head1 NAME
 
-makebeamerinfo
+makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beamer
 
 =head1 VERSION
 
-2.0.0b2
+2.0.0
 
 =head1 SYNOPSIS
 
