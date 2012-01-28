@@ -1,0 +1,21 @@
+PageProps = {
+  1:	{
+	  'title': "Title",
+	  'transition': PageTurn,
+	},
+  2:	{
+	  'transition': PageTurn,
+	},
+  3:	{
+	  'overview': False,
+	  'title': "section1",
+	  'title': "section1: subsection1a",
+	},
+  4:	{
+	  'overview': False,
+	},
+  5:	{
+	  'transition': PageTurn,
+	},
+}
+AvailableTransitions = [WipeRight]
