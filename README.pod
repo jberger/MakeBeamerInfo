@@ -10,7 +10,7 @@ makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beamer
 
 =head1 DESCRIPTION
 
-L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in viewing presentations made in L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>. Impressive uses a F<.info> control file to specify the transitions used between pages. While is file isn't necessary, the Beamer-based presentation can be presented in a much more consistant style when the F<.info> file is tuned to the individual presentation. C<makebeamerinfo> is designed to create this file based on an auxiliary file (F<.nav>) that Beamer creates in parallel with the presentation. It also does not require any configuration or tags in the presentation source.
+L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in viewing presentations made in L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>. Impressive uses a F<.info> control file to specify the transitions used between pages. While this file isn't necessary, the Beamer-based presentation can be presented in a much more consistant style when the F<.info> file is tuned to the individual presentation. C<makebeamerinfo> is designed to create this file based on an auxiliary file (F<.nav>) that Beamer creates in parallel with the presentation. It also does not require any configuration or tags in the presentation source.
 
 =head1 OPTIONS AND ARGUMENTS
 
