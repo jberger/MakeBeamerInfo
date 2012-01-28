@@ -7,6 +7,9 @@ use File::Compare;
 
 use App::makebeamerinfo;
 
+#================
+# Create some temporary files
+
 my $nav = File::Temp->new( SUFFIX => '.nav' );
 print $nav <<'NAV';
 \beamer@endinputifotherversion {3.10pt}
@@ -53,6 +56,9 @@ PageProps = {
 AvailableTransitions = [WipeRight]
 INFO
 seek($good_info, 0, 0);
+
+#========================
+# Tests
 
 my $app = App::makebeamerinfo->new( nav => "$nav" );
 isa_ok( $app, 'App::makebeamerinfo' );

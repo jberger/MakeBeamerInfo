@@ -3,51 +3,11 @@
 use strict;
 use warnings;
 
-#============================
-# Filename: makebeamerinfo
-# Author: Joel Berger
-# Author's Email: joel.a.berger <at> gmail <dot> com
-# Revision Date: Jan 25, 2012
-# See verion info in lib/App/makebeamerinfo.pm
-#
-#============================
-# Changelog information goes here:
-#
-# 2.0.0: A complete rewrite of the engine that parses the .nav file,
-#   additional presets, and functioning GUI and CLI modes.
-#
-#============================
-# License: GPLv3 or any later version. See http://www.gnu.org/licenses/ for more information.
-#
-#   Copyright (C) 2012 Joel Berger
-#
-#   This program is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation, either version 3 of the License, or
-#   any later version.
-#
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
-#   You should have received a copy of the GNU General Public License
-#   along with this program.  If not, see <http://www.gnu.org/licenses/>
-
-#============================
-# Initialization
-#============================
-
-#============================
-# Load packages:
-
 use Getopt::Long;
 use Pod::Usage;
 
 #============================
-# Parse in command line options and start program in GUI or CLI mode
-#
-
+# Parse in command line options 
 
 my $opt_nav; # command option for nav file
 my $opt_pdf; # command option for pdf file
@@ -91,7 +51,7 @@ MESSAGE
 
 }
 
-# use if module to avoid bareword problem
+# use 'if' module to avoid bareword problem
 use if 1, $class;
 
 #============================
@@ -121,10 +81,6 @@ $app->run;
 =head1 NAME
 
 makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beamer
-
-=head1 VERSION
-
-2.0.0
 
 =head1 SYNOPSIS
 
