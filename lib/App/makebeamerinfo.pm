@@ -158,6 +158,20 @@ sub exitProgramFinished {
 }
 
 #============================
+# Overloadable methods
+
+sub userMessage {
+  my $self = shift;
+  my ($title, $message) = @_;
+
+}
+
+sub run {
+  my $self = shift;
+  $self->createInfo;
+}
+
+#============================
 # Methods for finding and opening files
 
 # method that takes the full path of a specified file 

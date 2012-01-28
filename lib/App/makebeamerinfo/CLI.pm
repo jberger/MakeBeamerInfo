@@ -12,10 +12,5 @@ sub userMessage {
   print "$title:\n$message\n";
 }
 
-sub run {
-  my $self = shift;
-  $self->createInfo;
-}
-
 1;
 
