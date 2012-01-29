@@ -403,7 +403,7 @@ App::makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beame
 
 =head1 DESCRIPTION
 
-This module and its subclasses serve as the backend for L<makebeamerinfo>.
+This module and its subclasses serve as the backend for L<makebeamerinfo>. Most users should probably be using that script rather than investigating this module.
 
 =head1 SEE ALSO
 
@@ -420,6 +420,20 @@ L<Impressive|http://impressive.sourceforge.net/>
 =item *
 
 L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>
+
+=back
+
+=head1 FUTURE PLANS
+
+=over
+
+=item *
+
+The F<.nav> parser should really use L<Text::Balanced> or at least a smarter regex for matching strings inside C<{}> blocks.
+
+=item *
+
+Need more tests! Specifically, unit tests. This was my first published script, written before I was aware of such thing. The version 2.0 release was requested by user and as such is still lacking a roundly covering test suite. This should be corrected.
 
 =back
 
