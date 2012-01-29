@@ -7,6 +7,8 @@ use Cwd 'abs_path';
 use File::Basename;
 use File::Find;
 
+use Text::Balanced qw/extract_bracketed extract_multiple/;
+
 our $VERSION = "2.000";
 $VERSION = eval $VERSION;
 
@@ -258,32 +260,52 @@ sub readNav {
 
   # first read through the nav file for framepages
   while (<$nav>) {
-    if( /framepages {(\d+)}{(\d+)}/ ) {
-      for ( my $i = $1; $i < $2; $i++) {
+    if( /\\beamer\@framepages\s*/gc ) {
+      my ($begin, $end) = tex_parser( $_, 2 );
+
+      for ( my $i = $begin; $i < $end; $i++) {
         $pages->{$i} = { page => $i, type => 'increment' };
       }
-      $pages->{$2} = { page => $2, type => 'frame' };
+      $pages->{$end} = { page => $end, type => 'frame' };
     }
   }
   # go back to the top of the .nav file
   seek($nav,0,0); 
   # then read the file again to determine other information
   while (<$nav>) {
-    if( /\\sectionentry {(\d+)}{([^\}]+)}{(\d+)}/ ) {
-      $sections->{$1}{'page'} = $3;
-      $sections->{$1}{'title'} = $2;
-      $pages->{$3}{'is_section'} = $1;
+    if( /\\sectionentry\s*/gc ) {
+      my ($section, $title, $page) = tex_parser( $_, 3 );
+
+      $sections->{$section}{'page'} = $page;
+      $sections->{$section}{'title'} = $title;
+      $pages->{$page}{'is_section'} = $section;
     }
-    if( /\@subsectionentry {\d+}{(\d+)}{(\d+)}{(\d+)}{([^\}]+)}/ ) {
-      $pages->{$3}{'is_subsection'} = $2;
-      $pages->{$3}{'of_section'} = $1;
-      $sections->{$1}{$2}{'page'} = $3;
-      $sections->{$1}{$2}{'title'} = $4;
-      if ($collapse and $sections->{$1}{'page'} == ($3 - 1)) {
-        $pages->{ $sections->{$1}{'page'} }{'to_collapse'} = 1;
+    if( /\\beamer\@subsectionentry\s*{\d+}{(\d+)}{(\d+)}{(\d+)}{([^\}]+)}/gc ) {
+      my (undef, $section, $subsection, $page, $title)
+        = tex_parser( $_, 5 );
+
+      $pages->{$page}{'is_subsection'} = $subsection;
+      $pages->{$page}{'of_section'} = $section;
+      $sections->{$section}{$subsection}{'page'} = $page;
+      $sections->{$section}{$subsection}{'title'} = $title;
+      if ($collapse and $sections->{$section}{'page'} == ($page - 1)) {
+        $pages->{ $sections->{$section}{'page'} }{'to_collapse'} = 1;
       }
     }
   }
+}
+
+sub tex_parser {
+  # this function needs aliased arguments
+  # args: ( string with pos at start position, number of matches (optional) )
+
+  # match {} blocks
+  my @fields = extract_multiple( 
+    $_[0], [sub { extract_bracketed( $_[0], '{}' ) }], $_[1], 1 
+  );
+
+  # strip surrounding {}
+  return map { $f = $_; $f =~ s/^\{//; $f =~ s/\}$//; $f } @fields;
 }
 
 sub writeInfo {
