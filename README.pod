@@ -22,6 +22,16 @@ L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in vi
   --gui 
       Explicitly request GUI mode
 
+  -t
+  --transitions
+      Request a specific transition set. Currenly it may be one of:
+      - clean   	makebeamerinfo's default, pageturn and wiperight
+      - default		that is, Impressive's default selection
+      - sane		selections which make sense for a Beamer presentation
+
+      Note that these may also be specified with the environment variable
+      $MAKEBEAMERINFO_TRANSITIONS, again set to one of the above selections
+
   -p
   --pdf
       Explicitly specify location of .pdf file

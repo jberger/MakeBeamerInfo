@@ -11,6 +11,7 @@ use Pod::Usage;
 
 my $opt_nav; # command option for nav file
 my $opt_pdf; # command option for pdf file
+my $trans; # command option for transition set (default clean sane)
 my $help; # command switch to display help
 my $if_gui; # boolean of operational mode, 1 = GUI, 0 = CLI
 my $class; # full class name to invoke
@@ -19,10 +20,11 @@ BEGIN {
   $help = 0;
   $if_gui = ! @ARGV; # If no options given assume GUI mode
   GetOptions(
-    'gui'    => \$if_gui,
-    'help|?' => \$help,
-    'nav:s'  => \$opt_nav,
-    'pdf:s'  => \$opt_pdf,
+    'gui'           => \$if_gui,
+    'transitions:s' => \$trans,
+    'help|?'        => \$help,
+    'nav:s'         => \$opt_nav,
+    'pdf:s'         => \$opt_pdf,
   );
 
   pod2usage(0) if $help;
@@ -69,10 +71,18 @@ while (@ARGV) {
   }
 }
 
-my $app = $class->new( pdf => $opt_pdf, nav => $opt_nav );
+if (! $trans and $ENV{MAKEBEAMERINFO_TRANSITIONS}) {
+  $trans = $ENV{MAKEBEAMERINFO_TRANSITIONS};
+}
+
+my $app = $class->new( 
+  pdf => $opt_pdf, 
+  nav => $opt_nav, 
+  transition_set => $trans,
+);
 
 #============================
-# Start one interface or the other
+# Run (class specific) script
 
 $app->run;
 
@@ -102,6 +112,16 @@ L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in vi
   -g
   --gui 
       Explicitly request GUI mode
+
+  -t
+  --transitions
+      Request a specific transition set. Currenly it may be one of:
+      - clean   	makebeamerinfo's default, pageturn and wiperight
+      - default		that is, Impressive's default selection
+      - sane		selections which make sense for a Beamer presentation
+
+      Note that these may also be specified with the environment variable
+      $MAKEBEAMERINFO_TRANSITIONS, again set to one of the above selections
 
   -p
   --pdf

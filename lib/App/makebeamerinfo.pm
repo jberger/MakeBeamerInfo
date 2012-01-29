@@ -83,6 +83,14 @@ sub new {
   $self->{files}{pdf} = abs_path($args->{pdf}) if $args->{pdf};
   $self->{files}{nav} = abs_path($args->{nav}) if $args->{nav};
 
+  # set transition_set if specified and valid
+  my @transition_sets = qw/default clean sane/;
+  if( my $arg_trans = $args->{transition_set} ) {
+    if (grep {$arg_trans eq $_} @transition_sets) {
+      $self->{options}{transition_set} = $arg_trans;
+    } 
+  }
+
   bless $self, $class;
 
   $self->_init_transitions;
