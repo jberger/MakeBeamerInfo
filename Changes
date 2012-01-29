@@ -1,6 +1,6 @@
 Revision history for Perl application App::makebeamerinfo
 
-v2.1  
+v2.1  Jan 29, 2012
 	- Parser engine now uses Text::Balanced
 		- handles nested brackets in .nav
 
