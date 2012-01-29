@@ -9,7 +9,7 @@ use File::Find;
 
 use Text::Balanced qw/extract_bracketed extract_multiple/;
 
-our $VERSION = "2.000";
+our $VERSION = "2.001";
 $VERSION = eval $VERSION;
 
 #list of the available transitions
