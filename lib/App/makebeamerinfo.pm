@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Cwd 'abs_path';
-use File::Spec;
+use File::Basename;
 use File::Find;
 
 our $VERSION = "2.000";
@@ -58,8 +58,11 @@ sub new {
   my $args = ref $_[0] ? shift() : { @_ };
 
   my $self = {
-    files    => {}, #holder for file name etc.
-    pages    => {}, #holder for page information from nav file
+    files => { #holder for file names
+      pdf => '',
+      nav => '',
+    },
+    pages => {}, #holder for page information from nav file
     sections => {}, #holder for section information
     transitions => undef,  #initialized later
 
@@ -180,24 +183,19 @@ sub findFile {
   my $self = shift;
 
   # burst the full file path into pieces
-  my $full_path = shift;
-  my ($vol,$path,$file) = File::Spec->splitpath( $full_path );
+  my $full_path = shift or return '';
+  my ($file, $dirs, $suffix) = fileparse( $full_path );
 
-  my $file_to_find = $file;
-  if ($file =~ /\.nav$/) {
-    $file_to_find =~ s/\.nav$/\.pdf/;
-  } elsif ($file =~ /\.pdf$/) {
-    $file_to_find =~ s/\.pdf$/\.nav/;
-  } 
+  $file .= ($suffix eq '.pdf') ? '.nav' : '.pdf';
 
   my $found = '';
   my $wanted = sub { 
     return if $found;
-    if ($_ eq $file_to_find) {
+    if ($_ eq $file) {
       $found = $File::Find::name;
     }
   };
-  find( $wanted , File::Spec->catpath($vol,$path) );
+  find( $wanted , $dirs );
 
   return $found;
 }
