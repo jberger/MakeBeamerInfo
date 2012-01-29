@@ -2,51 +2,13 @@
 
 makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beamer
 
-=head1 SYNOPSIS
+=head1 DOCUMENTATION
 
-  makebeamerinfo                        # No args starts the program in GUI mode
-  makebeamerinfo -p document.pdf        # Explicitly specify location of .pdf file
-  makebeamerinfo --help/-h              # Shows a usage message
+Users looking for usage information should look at L<makebeamerinfo>. For subclassing information (not stable yet) one might look at L<App::makebeamerinfo>.
 
-=head1 DESCRIPTION
+=head1 INSTALLATION
 
-L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in viewing presentations made in L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>. Impressive uses a F<.info> control file to specify the transitions used between pages. While this file isn't necessary, the Beamer-based presentation can be presented in a much more consistant style when the F<.info> file is tuned to the individual presentation. C<makebeamerinfo> is designed to create this file based on an auxiliary file (F<.nav>) that Beamer creates in parallel with the presentation. It also does not require any configuration or tags in the presentation source.
-
-=head1 OPTIONS AND ARGUMENTS
-
-  makebeamerinfo [arguments] [files]
-
-  Run with no arguments or files starts the program in GUI mode
-
-  -g
-  --gui 
-      Explicitly request GUI mode
-
-  -t
-  --transitions
-      Request a specific transition set. Currenly it may be one of:
-      - clean   	makebeamerinfo's default, pageturn and wiperight
-      - default		that is, Impressive's default selection
-      - sane		selections which make sense for a Beamer presentation
-
-      Note that these may also be specified with the (exported) environment
-      variable $MAKEBEAMERINFO_TRANSITIONS, again set to one of the above
-      selections. Note also that a command line switch wins if both are set.
-
-  -p
-  --pdf
-      Explicitly specify location of .pdf file
-
-  -n
-  --nav
-      Explicitly specify location of .nav file
-
-  Additional files may be specified without flags,
-  their file type(s) will be inferred by file extension
-
-  -h
-  --help
-      Shows a usage message and exit. Overrides all other options.
+Information coming soon.
 
 =head1 SEE ALSO
 
