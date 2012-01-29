@@ -459,10 +459,6 @@ L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>
 
 =item *
 
-The F<.nav> parser should really use L<Text::Balanced> or at least a smarter regex for matching strings inside C<{}> blocks.
-
-=item *
-
 Need more tests! Specifically, unit tests. This was my first published script, written before I was aware of such thing. The version 2.0 release was requested by user and as such is still lacking a roundly covering test suite. This should be corrected.
 
 =back
