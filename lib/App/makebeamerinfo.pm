@@ -299,7 +299,7 @@ sub tex_parser {
   # this function needs aliased arguments
   # args: ( string with pos at start position, number of matches (optional) )
 
-  # match {} blocks
+  # match {} blocks, See Text::Balanced for explaination
   my @fields = extract_multiple( 
     $_[0], [sub { extract_bracketed( $_[0], '{}' ) }], $_[1], 1 
   );
