@@ -17,6 +17,11 @@ my $builder = Module::Build->new(
   recommends => {
     'Tk' => 0,
   },
+  meta_merge => {
+    resources  => {
+      repository => "http://github.com/jberger/Alien-GSL",
+    },
+  },
 );
 
 $builder->create_build_script;

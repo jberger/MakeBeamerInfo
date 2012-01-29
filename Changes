@@ -1,6 +1,6 @@
 Revision history for Perl application App::makebeamerinfo
 
-v2.0
+v2.0  Jan 28, 2012
 	- First CPAN release
 	- Repository moved to GitHub 
 		- https://github.com/jberger/MakeBeamerInfo
