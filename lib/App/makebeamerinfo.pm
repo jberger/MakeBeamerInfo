@@ -192,7 +192,7 @@ sub findFile {
 
   # burst the full file path into pieces
   my $full_path = shift or return '';
-  my ($file, $dirs, $suffix) = fileparse( $full_path );
+  my ($file, $dirs, $suffix) = fileparse( $full_path, '.pdf', '.nav' );
 
   $file .= ($suffix eq '.pdf') ? '.nav' : '.pdf';
 

@@ -29,8 +29,9 @@ L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in vi
       - default		that is, Impressive's default selection
       - sane		selections which make sense for a Beamer presentation
 
-      Note that these may also be specified with the environment variable
-      $MAKEBEAMERINFO_TRANSITIONS, again set to one of the above selections
+      Note that these may also be specified with the (exported) environment
+      variable $MAKEBEAMERINFO_TRANSITIONS, again set to one of the above
+      selections. Note also that a command line switch wins if both are set.
 
   -p
   --pdf
