@@ -27,7 +27,7 @@ Liviu Andronic is working on Debian (Ubuntu) packages. See more at L<https://lau
 
 =head1 SEE ALSO
 
-=over 4
+=over
 
 =item *
 
