@@ -19,7 +19,7 @@ my $builder = Module::Build->new(
   },
   meta_merge => {
     resources  => {
-      repository => "http://github.com/jberger/Alien-GSL",
+      repository => "http://github.com/jberger/MakeBeamerInfo",
     },
   },
 );
