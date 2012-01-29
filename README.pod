@@ -13,7 +13,17 @@ Users looking for usage information should look at L<makebeamerinfo>. For subcla
 
 =head1 INSTALLATION
 
-Information coming soon.
+=over
+
+=item *
+
+L<App::makebeamerinfo> can be installed from L<CPAN> using the standard C<cpan> client (or better yet L<cpanm>).
+
+=item * 
+
+Liviu Andronic is working on Debian (Ubuntu) packages. See more at L<https://launchpad.net/~landronimirc/+archive/experimental/+packages>.
+
+=back
 
 =head1 SEE ALSO
 

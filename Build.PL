@@ -9,7 +9,7 @@ my $builder = Module::Build->new(
   dist_author => 'Joel A. Berger <joel.a.berger@gmail.com>',
   license  => 'perl',
   requires => {
-    'perl' => '5.6.2',
+    'perl' => '5.8.1',
   },
   configure_requires => {
     'Module::Build' => 0.38,
