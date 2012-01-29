@@ -280,7 +280,7 @@ sub readNav {
       $sections->{$section}{'title'} = $title;
       $pages->{$page}{'is_section'} = $section;
     }
-    if( /\\beamer\@subsectionentry\s*{\d+}{(\d+)}{(\d+)}{(\d+)}{([^\}]+)}/gc ) {
+    if( /\\beamer\@subsectionentry\s*/gc ) {
       my (undef, $section, $subsection, $page, $title)
         = tex_parser( $_, 5 );
 
@@ -305,7 +305,7 @@ sub tex_parser {
   );
 
   # strip surrounding {}
-  return map { $f = $_; $f =~ s/^\{//; $f =~ s/\}$//; $f } @fields;
+  return map { my $f = $_; $f =~ s/^\{//; $f =~ s/\}$//; $f } @fields;
 }
 
 sub writeInfo {
