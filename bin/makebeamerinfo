@@ -76,7 +76,8 @@ my $app = $class->new( pdf => $opt_pdf, nav => $opt_nav );
 
 $app->run;
 
-## POD (my editor doesn't highlight after END tag)
+__END__
+__POD__
 
 =head1 NAME
 

@@ -7,7 +7,7 @@ use Cwd 'abs_path';
 use File::Spec;
 use File::Find;
 
-our $VERSION = v2.0;
+our $VERSION = "2.000";
 $VERSION = eval $VERSION;
 
 #list of the available transitions
@@ -389,4 +389,57 @@ sub get_selected {
 
 
 1;
+
+__END__
+__POD__
+
+=head1 NAME
+
+App::makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beamer
+
+=head1 SYNOPSIS
+
+ use App::makebeamerinfo;
+ my $app = App::makebeamerinfo->new();
+ $app->run;
+
+=head1 DESCRIPTION
+
+This module and its subclasses serve as the backend for L<makebeamerinfo>.
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<makebeamerinfo>
+
+=item *
+
+L<Impressive|http://impressive.sourceforge.net/>
+
+=item *
+
+L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>
+
+=back
+
+=head1 SOURCE REPOSITORY
+
+L<http://github.com/jberger/MakeBeamerInfo>
+
+=head1 AUTHOR
+
+Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Joel Berger
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
+
 
