@@ -16,11 +16,11 @@ Information coming soon.
 
 =item *
 
-L<Impressive|http://impressive.sourceforge.net/>
+Impressive: L<http://impressive.sourceforge.net/>
 
 =item *
 
-L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>
+LaTeX Beamer: L<http://latex-beamer.sourceforge.net/>
 
 =back
 
