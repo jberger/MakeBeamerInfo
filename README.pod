@@ -1,6 +1,6 @@
-=head1 NAME
+=head1 makebeamerinfo
 
-makebeamerinfo - Creates .info file for use with Impressive and LaTeX Beamer
+Creates .info file for use with Impressive and LaTeX Beamer
 
 =head1 DESCRIPTION
 
