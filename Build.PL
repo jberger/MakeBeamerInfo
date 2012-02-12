@@ -20,6 +20,10 @@ my $builder = Module::Build->new(
   meta_merge => {
     resources  => {
       repository => "http://github.com/jberger/MakeBeamerInfo",
+      bugtracker => "http://github.com/jberger/MakeBeamerInfo/issues",
+    },
+    no_index => {
+      file => [ 'README.pod' ],
     },
   },
 );
