@@ -9,7 +9,7 @@ use File::Find;
 
 use Text::Balanced qw/extract_bracketed extract_multiple/;
 
-our $VERSION = "2.001";
+our $VERSION = "2.002";
 $VERSION = eval $VERSION;
 
 use App::makebeamerinfo::Transitions;
@@ -370,7 +370,7 @@ Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by Joel Berger
+Copyright (C) 2012-2013 by Joel Berger
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

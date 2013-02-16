@@ -1,5 +1,12 @@
 Revision history for Perl application App::makebeamerinfo
 
+v2.2  Feb 16, 2013
+	- Transition sets are now objects
+	- Rename some sets
+		- default --> all
+		- clean   --> turn
+	- Default to "sane" transition set
+
 v2.1  Jan 29, 2012
 	- Parser engine now uses Text::Balanced
 		- handles nested brackets in .nav

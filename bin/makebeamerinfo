@@ -116,9 +116,9 @@ L<Impressive|http://impressive.sourceforge.net/> is a pdf viewer that aids in vi
   -t
   --transitions
       Request a specific transition set. Currenly it may be one of:
-      - clean   	makebeamerinfo's default, pageturn and wiperight
-      - default		that is, Impressive's default selection
-      - sane		selections which make sense for a Beamer presentation
+      - all		allow all of the transitions
+      - turn	   	pageturn and wiperight, the author's preference
+      - sane		(default) selections which make sense
 
       Note that these may also be specified with the (exported) environment
       variable $MAKEBEAMERINFO_TRANSITIONS, again set to one of the above
