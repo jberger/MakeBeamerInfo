@@ -38,7 +38,6 @@ sub create_window {
   #creates Tk window
 
   my $self = shift;
-  my $transitions = $self->{transitions};
 
   my %gui;
 
@@ -126,41 +125,31 @@ sub create_window {
   ) -> grid(-row => 2, -column => 3);
 
   # "Transition Set" items
-  $gui{'radio'}{'default'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
-    -variable => \$self->{options}{'transition_set'},
-    -value => 'default',
-    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
-  ) -> grid(-row => 1, -column => 1);
-  $gui{'label'}{'deault'} = $gui{'frame'}{'transition_set'} -> Label(
-    -text => 'Default'
-  ) -> grid(-row => 1, -column => 2);
+  my $custom = $self->{transitions}{custom} = App::makebeamerinfo::Transitions->new('custom');
 
-  $gui{'radio'}{'clean'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
-    -variable => \$self->{options}{'transition_set'},
-    -value => 'clean',
-    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
-  ) -> grid(-row => 2, -column => 1);
-  $gui{'label'}{'clean'} = $gui{'frame'}{'transition_set'} -> Label(
-    -text => 'Clean'
-  ) -> grid(-row => 2, -column => 2);
+  my $trans_counter = 1;
+  my $selected;
+  foreach my $trans ( sort { $a->name cmp $b->name } values %{ $self->{transitions} } ) {
+    my $name = $trans->name;
+    my $state    = $name eq 'custom'  ? 'normal' : 'disabled';
 
-  $gui{'radio'}{'sane'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
-    -variable => \$self->{options}{'transition_set'},
-    -value => 'sane',
-    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'disabled'); }
-  ) -> grid(-row => 3, -column => 1);
-  $gui{'label'}{'sane'} = $gui{'frame'}{'transition_set'} -> Label(
-    -text => 'Sane Preset'
-  ) -> grid(-row => 3, -column => 2);
+    $selected = $trans + 0 if $name eq 'all';
 
-  $gui{'radio'}{'custom'} = $gui{'frame'}{'transition_set'} -> Radiobutton(
-    -variable => \$self->{options}{'transition_set'},
-    -value => 'custom',
-    -command => sub { $gui{'nb'} -> pageconfigure('transitions', -state => 'normal'); }
-  ) -> grid(-row => 4, -column => 1);
-  $gui{'label'}{'custom'} = $gui{'frame'}{'transition_set'} -> Label(
-    -text => 'Custom'
-  ) -> grid(-row => 4, -column => 2);
+    my $command = sub {
+      $self->{options}{'transition_set'} = $trans;
+      $gui{'nb'} -> pageconfigure('transitions', -state => $state);
+    };
+    
+    $gui{'radio'}{$name} = $gui{'frame'}{'transition_set'} -> Radiobutton(
+      -command => $command,
+      -variable => \$selected,
+      -value => $trans + 0,
+    ) -> grid(-row => $trans_counter, -column => 1);
+    $gui{'label'}{$name} = $gui{'frame'}{'transition_set'} -> Label(
+      -text => ucfirst($name)
+    ) -> grid(-row => $trans_counter++, -column => 2);
+
+  }
 
   # "Other options" items
   $gui{'check'}{'collapse'} = $gui{'frame'}{'other_options'} -> Checkbutton(
@@ -173,7 +162,7 @@ sub create_window {
   ) -> grid(-row => 1, -column=> 2);
 
   # Populate custom transition tab
-  my $num_transitions = keys %{ $transitions->{'increment'} };
+  my @all = @App::makebeamerinfo::Transitions::All;
   $gui{'label'}{'F1'} = $gui{'frame'}{'custom_transitions'} -> Label(
     -text => 'F'
   ) -> grid(-row => 0, -column => 1);
@@ -186,15 +175,15 @@ sub create_window {
   $gui{'label'}{'I2'} = $gui{'frame'}{'custom_transitions'} -> Label(
     -text => 'I'
   ) -> grid(-row => 0, -column => 5);
-  foreach my $trans (sort keys %{ $transitions->{'increment'} }) {
+  foreach my $trans (sort @all) {
     # Create each transition selection element
     $gui{'transitions'}{$trans}{'frame'} = $gui{'frame'}{'custom_transitions'} -> Checkbutton(
-      -variable => \$transitions->{'frame'}{$trans},
+      -variable => \$custom->{'frame'}{$trans},
       -onvalue => 1,
       -offvalue => 0
     );
     $gui{'transitions'}{$trans}{'increment'} = $gui{'frame'}{'custom_transitions'} -> Checkbutton(
-      -variable => \$transitions->{'increment'}{$trans},
+      -variable => \$custom->{'increment'}{$trans},
       -onvalue => 1,
       -offvalue => 0
     );
@@ -205,12 +194,13 @@ sub create_window {
     my $counter = keys %{ $gui{'transitions'} };
     my $col;
     my $row;
-    if ($counter <= $num_transitions / 2) {
+    my $num = @all;
+    if ($counter <= $num / 2) {
       $col = 1;
       $row = $counter;
     } else {
       $col = 4;
-      $row = $counter - $num_transitions / 2;
+      $row = $counter - $num / 2;
     }
     $gui{'transitions'}{$trans}{'frame'} -> grid(-row => $row, -column => $col);
     $gui{'transitions'}{$trans}{'increment'} -> grid(-row => $row, -column => $col + 1);

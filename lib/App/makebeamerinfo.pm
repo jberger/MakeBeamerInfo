@@ -16,7 +16,7 @@ use App::makebeamerinfo::Transitions;
 
 # the "wipe" transition set is useful for me
 my %transitions = (
-  default => App::makebeamerinfo::Transitions->new('default'),
+  all => App::makebeamerinfo::Transitions->new('all'),
 );
 
 $transitions{turn} = App::makebeamerinfo::Transitions->new(
@@ -66,8 +66,8 @@ sub new {
       # set option to collapse AtBeginSection 
       #  and AtBeginSubsection elements (default true)
       collapse => 1,
-      # set_transition default to default
-      transition_set => $transitions{default},
+      # set_transition default to sane
+      transition_set => $transitions{sane},
     },
   };
 
