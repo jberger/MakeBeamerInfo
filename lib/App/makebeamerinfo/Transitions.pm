@@ -53,7 +53,7 @@ sub _initialize {
 sub get_selected {
   my ($self, $type) = @_;
   my $hash = $self->{$type} || croak "Unknown transition type '$type'";
-  return grep { $hash->{$_} } keys %$hash;
+  return sort grep { $hash->{$_} } keys %$hash;
 }
 
 # return the contents of a random element of an array
