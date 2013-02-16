@@ -13,15 +13,15 @@ Users looking for usage information should look at L<makebeamerinfo>. For subcla
 
 =head1 INSTALLATION
 
-=over
-
-=item *
-
 L<App::makebeamerinfo> can be installed from L<CPAN> using the standard C<cpan> client (or better yet L<cpanm>).
 
-=item * 
+For Ubuntu users, Liviu Andronic manages an Ubuntu (Debian) PPA. See more at:
 
-Liviu Andronic is working on Debian (Ubuntu) packages. See more at L<https://launchpad.net/~landronimirc/+archive/experimental/+packages>.
+=over 
+
+=item L<https://launchpad.net/~landronimirc/+archive/impressive>
+
+=item L<https://launchpad.net/~landronimirc/+archive/impressive-svn>
 
 =back
 
