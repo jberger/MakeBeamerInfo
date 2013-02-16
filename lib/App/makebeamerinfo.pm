@@ -12,30 +12,23 @@ use Text::Balanced qw/extract_bracketed extract_multiple/;
 our $VERSION = "2.001";
 $VERSION = eval $VERSION;
 
-#list of the available transitions
-my @available_transitions = ( qw/
-  Crossfade
-  None
-  PagePeel PageTurn
-  SlideDown SlideLeft SlideRight SlideUp
-  SpinOutIn SpiralOutIn
-  SqueezeDown SqueezeLeft SqueezeRight SqueezeUp
-  WipeBlobs
-  WipeCenterIn WipeCenterOut
-  WipeUp WipeDown WipeLeft WipeRight
-  WipeDownRight WipeUpLeft
-  ZoomOutIn
-/ );
+use App::makebeamerinfo::Transitions;
 
-# the "clean" transition set is a basic set useful in all circumstances
-my %clean = (
+# the "wipe" transition set is useful for me
+my %transitions = (
+  default => App::makebeamerinfo::Transitions->new('default'),
+);
+
+$transitions{turn} = App::makebeamerinfo::Transitions->new(
+  'turn', 
   increment => ["WipeRight"],
-  frame => "PageTurn"
+  frame => ["PageTurn"],
 );
 
 # the "sane" transition set sorts the available transitions 
 #  into the two uses as appropriate for a beamer presentation
-my %sane = (
+$transitions{sane} = App::makebeamerinfo::Transitions->new(
+  'sane', 
   increment => [ qw/
     WipeCenterIn WipeCenterOut
     WipeUp WipeDown WipeLeft WipeRight
@@ -43,14 +36,15 @@ my %sane = (
   / ],
   frame => [ qw/
     Crossfade
-    PagePeel PageTurn
     SlideDown SlideLeft SlideRight SlideUp
     SpinOutIn SpiralOutIn
     SqueezeDown SqueezeLeft SqueezeRight SqueezeUp
     WipeBlobs
     ZoomOutIn
-  / ]
+  / ],
 );
+
+# N.B. removed PagePeel PageTurn from sane at Liviu's request
 
 #==========================
 # Builder methods
@@ -66,62 +60,31 @@ sub new {
     },
     pages => {}, #holder for page information from nav file
     sections => {}, #holder for section information
-    transitions => undef,  #initialized later
-
-    # holder for making sure that the next random transition
-    #  is not the same as the last
-    last_transition => '',
+    transitions => \%transitions,
 
     options => {
       # set option to collapse AtBeginSection 
       #  and AtBeginSubsection elements (default true)
       collapse => 1,
-      # set_transition default to clean
-      transition_set => 'clean',
+      # set_transition default to default
+      transition_set => $transitions{default},
     },
   };
+
+  if ( defined $args->{transition_set} and exists $transitions{ $args->{transition_set} } ) {
+    $self->{options}{transition_set} = $transitions{ $args->{transition_set} };
+  }
 
   # pull files from arguments if present
   $self->{files}{pdf} = abs_path($args->{pdf}) if $args->{pdf};
   $self->{files}{nav} = abs_path($args->{nav}) if $args->{nav};
 
-  # set transition_set if specified and valid
-  my @transition_sets = qw/default clean sane/;
-  if( my $arg_trans = $args->{transition_set} ) {
-    if (grep {$arg_trans eq $_} @transition_sets) {
-      $self->{options}{transition_set} = $arg_trans;
-    } 
-  }
-
   bless $self, $class;
 
-  $self->_init_transitions;
   $self->_hunt_for_files;
 
   return $self;
   
-}
-
-sub _init_transitions {
-  my $self = shift;
-
-  # Initialize Hash of the custom transitions set 
-  #  from array of available transitions
-  my %transitions;
-  foreach my $trans (@available_transitions) {
-    $transitions{'increment'}{$trans} = 0;
-    $transitions{'frame'}{$trans} = 0;
-  }
-
-  # set some base selections for the 'custom' set
-  foreach my $trans (@{ $clean{'increment'} }) {
-    $transitions{'increment'}{$trans} = 1;
-  }
-  foreach my $trans (@{ $sane{'frame'} }) {
-    $transitions{'frame'}{$trans} = 1;
-  }
-
-  $self->{transitions} = \%transitions;
 }
 
 sub _hunt_for_files {
@@ -317,7 +280,7 @@ sub writeInfo {
 
   my $pages = $self->{pages};
   my $sections = $self->{sections};
-  my $options = $self->{options};
+  my $trans = $self->{options}{transition_set};
 
   print $info "PageProps = {\n";
   foreach my $page (sort { $a <=> $b } keys %$pages) {
@@ -336,85 +299,19 @@ sub writeInfo {
     if (
       $pages->{$page}{'type'} eq 'frame' 
       && ! $pages->{$page}{'to_collapse'} 
-      && $options->{'transition_set'} ne 'default'
+      && ! $trans->all_frame
     ) {
-      print $info "\t  \'transition\': " . $self->getFrameTransition() . ",\n";
+      print $info "\t  \'transition\': " . $trans->get_random_element . ",\n";
     }
     print $info "\t},\n";
   }
   print $info "}\n";
-  unless ($options->{'transition_set'} eq 'default') {
+  unless ( $trans->all_increment ) {
     print $info "AvailableTransitions = [";
-    print $info join(", ", $self->getOverallTransitions());
+    print $info join( ", ", $trans->get_selected('increment') );
     print $info "]";
   }
 }
-
-#============================
-# Subs that select certain transitions in certain cases
-
-sub getFrameTransition {
-  my $self = shift;
-
-  my $options = $self->{options};
-
-  my $result;
-  if ($options->{'transition_set'} eq 'custom') { 
-    $result = $self->getRandomElement(
-      $self->get_selected( $self->{transitions}{'frame'} )
-    );
-  } elsif ($options->{'transition_set'} eq 'clean') {
-    $result = $clean{'frame'};
-  } elsif ($options->{'transition_set'} eq 'sane') {
-    $result = $self->getRandomElement( @{ $sane{'frame'} } );
-  }
-  return $result;
-}
-
-sub getOverallTransitions {
-  my $self = shift;
-
-  my $options = $self->{options};
-
-  my @result;
-  if ($options->{'transition_set'} eq 'custom') {
-    @result = $self->get_selected( $self->{transitions}{'increment'} );
-  } elsif ($options->{'transition_set'} eq 'clean') {
-    @result = @{ $clean{'increment'} };
-  } elsif ($options->{'transition_set'} eq 'sane') {
-    @result = @{ $sane{'increment'} };
-  }
-  return @result;
-}
-
-#============================
-# Simple methods to perform actions with data structures
-
-# return the contents of a random element of an array
-sub getRandomElement {
-  my $self = shift;
-  my @input = @_;
-  my $length = @input;
-
-  my $rand = int(rand($length));
-  my $return = $input[$rand];
-
-  # prevent repeated transitions
-  while ($length > 1 && $return eq $self->{last_transition}) {
-    $rand = int(rand($length));
-    $return = $input[$rand];
-  }
-
-  $self->{last_transition} = $return;
-  return $return;
-}
-
-# get the hash keys whose values are true
-sub get_selected {
-  my ($self, $input) = @_;
-  return grep { $input->{$_} } keys %$input;
-}
-
 
 1;
 
