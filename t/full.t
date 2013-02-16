@@ -3,14 +3,19 @@ use warnings;
 
 use Test::More;
 use File::Temp ();
+use File::Spec;
 
 use App::makebeamerinfo;
 
 #================
 # Create some temporary files
 
-my $nav = File::Temp->new( SUFFIX => '.nav' );
-print $nav <<'NAV';
+my $dir = File::Temp->newdir;
+my $nav = File::Spec->catfile( "$dir", 'myfile.nav' );
+
+{ 
+  open my $nav_handle, '>', $nav or die "Cannot create temporary nav file for testing";
+  print $nav_handle <<'NAV';
 \beamer@endinputifotherversion {3.10pt}
 \headcommand {\slideentry {0}{0}{1}{1/1}{}{0}}
 \headcommand {\beamer@framepages {1}{1}}
@@ -28,7 +33,7 @@ print $nav <<'NAV';
 \headcommand {\beamer@documentpages {5}}
 \headcommand {\def \inserttotalframenumber {3}}
 NAV
-seek($nav, 0, 0);
+}
 
 my $good_info = File::Temp->new( SUFFIX => '.pdf.info' );
 print $good_info <<'INFO';
@@ -59,7 +64,7 @@ seek($good_info, 0, 0);
 #========================
 # Tests
 
-my $app = App::makebeamerinfo->new( nav => "$nav" );
+my $app = App::makebeamerinfo->new( nav => $nav, transition_set => 'turn' );
 isa_ok( $app, 'App::makebeamerinfo' );
 
 $app->readNav;
