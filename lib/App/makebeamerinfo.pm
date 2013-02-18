@@ -18,6 +18,7 @@ use App::makebeamerinfo::Transitions 'new_transition_set';
 my %transitions = (
   all     => new_transition_set('all', ':all'),
   default => new_transition_set('default', ':default'),
+  none    => new_transition_set('none', ':none'),
 );
 
 $transitions{turn} = new_transition_set(

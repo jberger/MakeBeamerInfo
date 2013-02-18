@@ -83,6 +83,20 @@ my $output = '';
 unlike( $output, qr/transition/, 'Default set does not emit transition statments' );
 unlike( $output, qr/AvailableTransitions/, 'Default set does not emit AvailableTransitions' );
 
+#=====================
+# Test 'none' set
+
+$app->transition_set( 'none' );
+
+$output = '';
+{
+  open my $output_handle, '>', \$output or die "Cannot open scalar for writing: $!";
+  $app->writeInfo($output_handle);
+}
+
+unlike( $output, qr/transition/, q{'none' set does not emit transition statments} );
+like( $output, qr/AvailableTransitions\s*=\s*[\s*None\s*]/, q{'none' AvailableTransitions is only 'None'} );
+
 #=================
 # Test turn set
 

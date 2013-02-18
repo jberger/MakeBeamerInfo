@@ -36,7 +36,11 @@ sub new {
   # handle shortcut
   if ( @_ == 1 ) {
     my $base = shift;
-    push @_, frame => $base, increment => $base;
+    if ( $base eq ':none' ) {
+      push @_, frame => ':default', increment => ['None'];
+    } else {
+      push @_, frame => $base, increment => $base;
+    }
   }
 
   $self->_initialize(@_);
