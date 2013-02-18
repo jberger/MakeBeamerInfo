@@ -4,12 +4,6 @@ use strict;
 use warnings;
 use Carp;
 
-use Exporter ();
-our @ISA = 'Exporter';
-our @EXPORT_OK = qw/new_transition_set/;
-
-sub new_transition_set { __PACKAGE__->new(@_) }
-
 #list of the available transitions
 our @All = ( qw/
   Crossfade

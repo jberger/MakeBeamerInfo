@@ -12,40 +12,7 @@ use Text::Balanced qw/extract_bracketed extract_multiple/;
 our $VERSION = "2.002";
 $VERSION = eval $VERSION;
 
-use App::makebeamerinfo::Transitions 'new_transition_set';
-
-# the "wipe" transition set is useful for me
-my %transitions = (
-  all     => new_transition_set('all', ':all'),
-  default => new_transition_set('default', ':default'),
-  none    => new_transition_set('none', ':none'),
-);
-
-$transitions{turn} = new_transition_set(
-  'turn', 
-  increment => ["WipeRight"],
-  frame => ["PageTurn"],
-);
-
-# the "sane" transition set sorts the available transitions 
-#  into the two uses as appropriate for a beamer presentation
-$transitions{most} = new_transition_set(
-  'most', 
-  increment => [ qw/
-    WipeCenterIn WipeCenterOut
-    WipeUp WipeDown WipeLeft WipeRight
-    WipeDownRight WipeUpLeft
-  / ],
-  frame => [ qw/
-    Crossfade
-    PagePeel PageTurn
-    SlideDown SlideLeft SlideRight SlideUp
-    SpinOutIn SpiralOutIn
-    SqueezeDown SqueezeLeft SqueezeRight SqueezeUp
-    WipeBlobs
-    ZoomOutIn
-  / ],
-);
+use App::makebeamerinfo::Transitions;
 
 #==========================
 # Builder methods
@@ -61,14 +28,13 @@ sub new {
     },
     pages => {}, #holder for page information from nav file
     sections => {}, #holder for section information
-    transitions => \%transitions,
+    transitions => {}, #holder for all available transition sets
 
     options => {
       # set option to collapse AtBeginSection 
       #  and AtBeginSubsection elements (default true)
       collapse => 1,
-      # set_transition default to sane
-      transition_set => $transitions{default},
+      transition_set => undef,
     },
   };
 
@@ -78,8 +44,12 @@ sub new {
 
   bless $self, $class;
 
+  $self->_setup_standard_transition_sets;
+
   if ( defined $args->{transition_set} ) { 
     $self->transition_set( $args->{transition_set} );
+  } else {
+    $self->transition_set( 'default' );
   }
 
   $self->_hunt_for_files;
@@ -88,13 +58,36 @@ sub new {
   
 }
 
-sub transition_set {
+sub _setup_standard_transition_sets {
   my $self = shift;
-  if ( my $name = shift ) {
-    my $trans = $self->{transitions}{$name} || die "Unknown transition set $name\n";
-    $self->{options}{transition_set} = $trans;
-  }
-  return $self->{options}{transition_set}->name
+  $self->add_transition_set('all', ':all');
+  $self->add_transition_set('default', ':default');
+  $self->add_transition_set('none', ':none');
+  $self->add_transition_set(
+    'turn', 
+    increment => ["WipeRight"],
+    frame => ["PageTurn"],
+  );
+
+  # the "most" transition set sorts the available transitions 
+  #  into the two uses as appropriate for a beamer presentation
+  $self->add_transition_set(
+    'most', 
+    increment => [ qw/
+      WipeCenterIn WipeCenterOut
+      WipeUp WipeDown WipeLeft WipeRight
+      WipeDownRight WipeUpLeft
+    / ],
+    frame => [ qw/
+      Crossfade
+      PagePeel PageTurn
+      SlideDown SlideLeft SlideRight SlideUp
+      SpinOutIn SpiralOutIn
+      SqueezeDown SqueezeLeft SqueezeRight SqueezeUp
+      WipeBlobs
+      ZoomOutIn
+    / ],
+  );
 }
 
 sub _hunt_for_files {
@@ -108,6 +101,24 @@ sub _hunt_for_files {
   if (! $files->{nav} and $files->{pdf}) {
     $files->{nav} = $self->findFile( $files->{pdf} );
   }
+}
+
+#=========================
+# Transition set helpers
+
+sub add_transition_set {
+  my $self = shift;
+  my $name = $_[0];
+  return $self->{transitions}{$name} = App::makebeamerinfo::Transitions->new( @_ );
+}
+
+sub transition_set {
+  my $self = shift;
+  if ( my $name = shift ) {
+    my $trans = $self->{transitions}{$name} || die "Unknown transition set $name\n";
+    $self->{options}{transition_set} = $trans;
+  }
+  return $self->{options}{transition_set}->name
 }
 
 #==========================

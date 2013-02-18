@@ -125,7 +125,7 @@ sub create_window {
   ) -> grid(-row => 2, -column => 3);
 
   # "Transition Set" items
-  my $custom = $self->{transitions}{custom} = App::makebeamerinfo::Transitions->new('custom', ':all');
+  my $custom = $self->add_transition_set('custom', ':all');
 
   my $trans_counter = 1;
   my $selected;
