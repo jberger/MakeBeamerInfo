@@ -12,14 +12,15 @@ use Text::Balanced qw/extract_bracketed extract_multiple/;
 our $VERSION = "2.002";
 $VERSION = eval $VERSION;
 
-use App::makebeamerinfo::Transitions;
+use App::makebeamerinfo::Transitions 'new_transition_set';
 
 # the "wipe" transition set is useful for me
 my %transitions = (
-  all => App::makebeamerinfo::Transitions->new('all'),
+  all     => new_transition_set('all', ':all'),
+  default => new_transition_set('default', ':default'),
 );
 
-$transitions{turn} = App::makebeamerinfo::Transitions->new(
+$transitions{turn} = new_transition_set(
   'turn', 
   increment => ["WipeRight"],
   frame => ["PageTurn"],
@@ -27,7 +28,7 @@ $transitions{turn} = App::makebeamerinfo::Transitions->new(
 
 # the "sane" transition set sorts the available transitions 
 #  into the two uses as appropriate for a beamer presentation
-$transitions{sane} = App::makebeamerinfo::Transitions->new(
+$transitions{sane} = new_transition_set(
   'sane', 
   increment => [ qw/
     WipeCenterIn WipeCenterOut
@@ -67,13 +68,9 @@ sub new {
       #  and AtBeginSubsection elements (default true)
       collapse => 1,
       # set_transition default to sane
-      transition_set => $transitions{sane},
+      transition_set => $transitions{default},
     },
   };
-
-  if ( defined $args->{transition_set} and exists $transitions{ $args->{transition_set} } ) {
-    $self->{options}{transition_set} = $transitions{ $args->{transition_set} };
-  }
 
   # pull files from arguments if present
   $self->{files}{pdf} = abs_path($args->{pdf}) if $args->{pdf};
@@ -81,10 +78,23 @@ sub new {
 
   bless $self, $class;
 
+  if ( defined $args->{transition_set} ) { 
+    $self->transition_set( $args->{transition_set} );
+  }
+
   $self->_hunt_for_files;
 
   return $self;
   
+}
+
+sub transition_set {
+  my $self = shift;
+  if ( my $name = shift ) {
+    my $trans = $self->{transitions}{$name} || die "Unknown transition set $name\n";
+    $self->{options}{transition_set} = $trans;
+  }
+  return $self->{options}{transition_set}->name
 }
 
 sub _hunt_for_files {
@@ -299,14 +309,14 @@ sub writeInfo {
     if (
       $pages->{$page}{'type'} eq 'frame' 
       && ! $pages->{$page}{'to_collapse'} 
-      && ! $trans->all_frame
+      && ! $trans->default_frame
     ) {
       print $info "\t  \'transition\': " . $trans->get_random_element . ",\n";
     }
     print $info "\t},\n";
   }
   print $info "}\n";
-  unless ( $trans->all_increment ) {
+  unless ( $trans->default_increment ) {
     print $info "AvailableTransitions = [";
     print $info join( ", ", $trans->get_selected('increment') );
     print $info "]";
@@ -356,7 +366,7 @@ L<LaTeX Beamer|http://latex-beamer.sourceforge.net/>
 
 =item *
 
-Need more tests! Specifically, unit tests. This was my first published script, written before I was aware of such thing. The version 2.0 release was requested by user and as such is still lacking a roundly covering test suite. This should be corrected.
+The test suite is improving, but still not excellent coverage. Continuing this is important.
 
 =back
 

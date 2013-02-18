@@ -4,6 +4,12 @@ use strict;
 use warnings;
 use Carp;
 
+use Exporter ();
+our @ISA = 'Exporter';
+our @EXPORT_OK = qw/new_transition_set/;
+
+sub new_transition_set { __PACKAGE__->new(@_) }
+
 #list of the available transitions
 our @All = ( qw/
   Crossfade
@@ -27,6 +33,12 @@ sub new {
   };
   bless $self, $class;
 
+  # handle shortcut
+  if ( @_ == 1 ) {
+    my $base = shift;
+    push @_, frame => $base, increment => $base;
+  }
+
   $self->_initialize(@_);
   return $self;
 }
@@ -34,26 +46,43 @@ sub new {
 sub _initialize {
   my $self = shift;
 
-  # called without arguments, get all, otherwise null for later setting
-  my $base = @_ ? 0 : 1;
-
-  $self->{increment}{$_} = $base for @All;
-  $self->{frame}{$_}     = $base for @All;
-
-  return unless @_;
-
   my %init = @_;
 
-  $self->{increment}{$_} = 1 for @{ $init{increment} };
-  $self->{frame}{$_}     = 1 for @{ $init{frame} };
+  for my $type ( qw/ frame increment / ) {
+
+    my $spec = $init{$type};
+
+    $self->{$type} = {};
+    next if $spec eq ':default';
+
+    my $base = 0;
+    if ( $spec eq ':all' ) {
+      $base = 1;
+    }
+
+    $self->{$type}{$_} = $base for @All;
+
+    if ( ref $spec ) {
+      $self->{$type}{$_} = 1 for @$spec;
+    }
+
+  }
 }
 
 # get all selected
 
 sub get_selected {
   my ($self, $type) = @_;
+  my $hash = $self->get_type($type);
+  my @keys = keys %$hash;
+  croak "Type $type is default" unless @keys;
+  return sort grep { $hash->{$_} } @keys;
+}
+
+sub get_type {
+  my ($self, $type) = @_;
   my $hash = $self->{$type} || croak "Unknown transition type '$type'";
-  return sort grep { $hash->{$_} } keys %$hash;
+  return $hash;
 }
 
 # return the contents of a random element of an array
@@ -77,16 +106,15 @@ sub get_random_element {
   return $return;
 }
 
-# test if all X are selected
+# test if default X are selected
 
-sub _all {
+sub _default {
   my ($self, $type) = @_;
-  my @array = $self->get_selected($type);
-  return @All == @array;
+  return ! keys %{ $self->{$type} };
 }
 
-sub all_frame     { shift->_all('frame')     }
-sub all_increment { shift->_all('increment') }
+sub default_frame     { shift->_default('frame')     }
+sub default_increment { shift->_default('increment') }
 
 # ro accessors
 sub name { $_[0]->{name} }
