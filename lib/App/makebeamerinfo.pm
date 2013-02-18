@@ -29,8 +29,8 @@ $transitions{turn} = new_transition_set(
 
 # the "sane" transition set sorts the available transitions 
 #  into the two uses as appropriate for a beamer presentation
-$transitions{sane} = new_transition_set(
-  'sane', 
+$transitions{most} = new_transition_set(
+  'most', 
   increment => [ qw/
     WipeCenterIn WipeCenterOut
     WipeUp WipeDown WipeLeft WipeRight
@@ -38,6 +38,7 @@ $transitions{sane} = new_transition_set(
   / ],
   frame => [ qw/
     Crossfade
+    PagePeel PageTurn
     SlideDown SlideLeft SlideRight SlideUp
     SpinOutIn SpiralOutIn
     SqueezeDown SqueezeLeft SqueezeRight SqueezeUp
@@ -45,8 +46,6 @@ $transitions{sane} = new_transition_set(
     ZoomOutIn
   / ],
 );
-
-# N.B. removed PagePeel PageTurn from sane at Liviu's request
 
 #==========================
 # Builder methods
