@@ -46,11 +46,7 @@ sub new {
 
   $self->_setup_standard_transition_sets;
 
-  if ( defined $args->{transition_set} ) { 
-    $self->transition_set( $args->{transition_set} );
-  } else {
-    $self->transition_set( 'default' );
-  }
+  $self->transition_set( $args->{transition_set} || 'default' );
 
   $self->_hunt_for_files;
 

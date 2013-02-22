@@ -1,11 +1,12 @@
 Revision history for Perl application App::makebeamerinfo
 
-v2.2  Feb 16, 2013
-	- Transition sets are now objects
+v2.2  Feb 21, 2013
+	- Transition sets are now pluggable objects
 	- Rename some sets
-		- default --> all
-		- clean   --> turn
-	- Default to "sane" transition set
+		- sane  --> most
+		- clean --> turn
+	- Added 'none' and 'all' sets
+	- Defaults to Impressive's own defaults
 
 v2.1  Jan 29, 2012
 	- Parser engine now uses Text::Balanced
